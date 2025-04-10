@@ -1,0 +1,88 @@
+# Rust specific
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE specific
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Build outputs
+/dist/
+/build/
+/out/
+
+# Logs
+*.log
+logs/
+**/logs/
+
+# Configuration files that might contain sensitive data
+**/config.yaml
+**/config.json
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+/coverage/
+*.lcov
+
+# Debug files
+*.pdb
+*.idb
+*.ilk
+*.dll
+*.so
+*.dylib
+
+# Documentation
+/docs/
+*.md
+!README.md
+
+# Cache directories
+.cache/
+.cargo/
+
+# Binary files
+*.exe
+*.dll
+*.so
+*.dylib
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Generated files
+*.gen.*
+*.generated.*
+*.min.*
+*.map
+
+# Backup files
+*.bak
+*.backup
+*~
+*.swp
+*.swo
+
+# Power logger specific
+/power_readings/
+/device_configs/
+*.csv
+*.json
+*.dat 
