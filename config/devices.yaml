@@ -1,0 +1,104 @@
+# Device Configuration
+# Each device has a unique ID and associated metadata
+
+devices:
+  - id: "RASPBERRY_PI_1"
+    name: "Solar Panel Controller 1"
+    device_type: "solar_controller"
+    location:
+      latitude: 40.7128
+      longitude: -74.0060
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 1000
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz-60Hz"
+      battery_capacity: "10kWh"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+    network:
+      ip: "192.168.1.100"
+      port: 8080
+      protocol: "TCP"
+
+  - id: "RASPBERRY_PI_2"
+    name: "Solar Panel Controller 2"
+    device_type: "solar_controller"
+    location:
+      latitude: 34.0522
+      longitude: -118.2437
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 1500
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz-60Hz"
+      battery_capacity: "15kWh"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+    network:
+      ip: "192.168.1.101"
+      port: 8080
+      protocol: "TCP"
+
+  - id: "RASPBERRY_PI_3"
+    name: "Solar Panel Controller 3"
+    device_type: "solar_controller"
+    location:
+      latitude: 51.5074
+      longitude: -0.1278
+      country: "UK"
+      region: "Europe"
+    specifications:
+      max_wattage: 2000
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz-60Hz"
+      battery_capacity: "20kWh"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+    network:
+      ip: "192.168.1.102"
+      port: 8080
+      protocol: "TCP"
+
+# Default configuration for new devices
+defaults:
+  network:
+    port: 8080
+    protocol: "TCP"
+  sensors:
+    temperature:
+      sampling_rate: "1s"
+      accuracy: "±0.5°C"
+    current:
+      sampling_rate: "100ms"
+      accuracy: "±1%"
+    voltage:
+      sampling_rate: "100ms"
+      accuracy: "±0.5%"
+  logging:
+    interval: "1m"
+    format: "json"
+    retention: "7d" 
