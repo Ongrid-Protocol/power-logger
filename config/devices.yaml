@@ -2,19 +2,93 @@
 # Each device has a unique ID and associated metadata
 
 devices:
-  - id: "RASPBERRY_PI_1"
-    name: "Solar Panel Controller 1"
+  # Kenya - Major Cities
+  - id: "SG1001KE01"
+    name: "Solar Generator 001"
     device_type: "solar_controller"
     location:
-      latitude: 40.7128
-      longitude: -74.0060
+      latitude: -1.2921
+      longitude: 36.8219
+      country: "KE"
+      region: "Africa"
+    specifications:
+      max_wattage: 1800
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "18kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1002KE02"
+    name: "Solar Consumer 002"
+    device_type: "solar_controller"
+    location:
+      latitude: -1.2864
+      longitude: 36.8172
+      country: "KE"
+      region: "Africa"
+    specifications:
+      max_wattage: 1250
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "12.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1003KE03"
+    name: "Solar Generator and Consumer 003"
+    device_type: "solar_controller"
+    location:
+      latitude: -1.3031
+      longitude: 36.8262
+      country: "KE"
+      region: "Africa"
+    specifications:
+      max_wattage: 2200
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "22kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1052US03"
+    name: "Solar Consumer 052"
+    device_type: "solar_controller"
+    location:
+      latitude: 41.8781
+      longitude: -87.6298
       country: "US"
       region: "North America"
     specifications:
-      max_wattage: 1000
-      voltage_range: "220V-240V"
-      frequency_range: "50Hz-60Hz"
-      battery_capacity: "10kWh"
+      max_wattage: 1250
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "12.5kWh"
+      phase_type: "single"
     sensors:
       - sensor_type: "temperature"
         count: 2
@@ -24,70 +98,9 @@ devices:
         count: 4
       - sensor_type: "light"
         count: 1
-    network:
-      ip: "192.168.1.100"
-      port: 8080
-      protocol: "TCP"
-
-  - id: "RASPBERRY_PI_2"
-    name: "Solar Panel Controller 2"
-    device_type: "solar_controller"
-    location:
-      latitude: 34.0522
-      longitude: -118.2437
-      country: "US"
-      region: "North America"
-    specifications:
-      max_wattage: 1500
-      voltage_range: "220V-240V"
-      frequency_range: "50Hz-60Hz"
-      battery_capacity: "15kWh"
-    sensors:
-      - sensor_type: "temperature"
-        count: 2
-      - sensor_type: "current"
-        count: 4
-      - sensor_type: "voltage"
-        count: 4
-      - sensor_type: "light"
-        count: 1
-    network:
-      ip: "192.168.1.101"
-      port: 8080
-      protocol: "TCP"
-
-  - id: "RASPBERRY_PI_3"
-    name: "Solar Panel Controller 3"
-    device_type: "solar_controller"
-    location:
-      latitude: 51.5074
-      longitude: -0.1278
-      country: "UK"
-      region: "Europe"
-    specifications:
-      max_wattage: 2000
-      voltage_range: "220V-240V"
-      frequency_range: "50Hz-60Hz"
-      battery_capacity: "20kWh"
-    sensors:
-      - sensor_type: "temperature"
-        count: 2
-      - sensor_type: "current"
-        count: 4
-      - sensor_type: "voltage"
-        count: 4
-      - sensor_type: "light"
-        count: 1
-    network:
-      ip: "192.168.1.102"
-      port: 8080
-      protocol: "TCP"
 
 # Default configuration for new devices
 defaults:
-  network:
-    port: 8080
-    protocol: "TCP"
   sensors:
     temperature:
       sampling_rate: "1s"

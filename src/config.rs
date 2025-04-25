@@ -11,7 +11,8 @@ pub struct DeviceConfig {
     pub location: DeviceLocation,
     pub specifications: DeviceSpecifications,
     pub sensors: Vec<SensorConfig>,
-    pub network: NetworkConfig,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<NetworkConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,7 +46,8 @@ pub struct NetworkConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefaultConfig {
-    pub network: DefaultNetworkConfig,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<DefaultNetworkConfig>,
     pub sensors: DefaultSensorConfig,
     pub logging: DefaultLoggingConfig,
 }
@@ -95,15 +97,96 @@ impl Config {
 
     pub fn get_device_location(&self, device_id: &str) -> Option<Location> {
         self.get_device(device_id).map(|device| {
-            Location::new(
+            // Create the location
+            let mut location = Location::new(
                 device.location.latitude,
                 device.location.longitude,
                 0.0, // Default altitude
                 5.0, // Default accuracy
                 8,   // Default satellite count
-            )
+            );
+            
+            // Manually set the country information from the device configuration
+            // instead of trying to detect it, which only works for a few countries
+            location.country = Some(crate::gps::Country {
+                code: device.location.country.clone(),
+                name: get_country_name(&device.location.country),
+                region: device.location.region.clone(),
+            });
+            
+            location
         })
     }
+}
+
+// Helper function to get country name from code
+fn get_country_name(code: &str) -> String {
+    match code {
+        "US" => "United States",
+        "CA" => "Canada",
+        "MX" => "Mexico",
+        "BR" => "Brazil",
+        "AR" => "Argentina",
+        "CL" => "Chile",
+        "PE" => "Peru",
+        "CO" => "Colombia",
+        "EC" => "Ecuador",
+        "GB" => "United Kingdom",
+        "DE" => "Germany",
+        "FR" => "France",
+        "ES" => "Spain",
+        "IT" => "Italy",
+        "PT" => "Portugal",
+        "CH" => "Switzerland",
+        "AT" => "Austria",
+        "SE" => "Sweden",
+        "NO" => "Norway",
+        "FI" => "Finland",
+        "JP" => "Japan",
+        "CN" => "China",
+        "IN" => "India",
+        "KR" => "South Korea",
+        "SG" => "Singapore",
+        "TH" => "Thailand",
+        "ID" => "Indonesia",
+        "MY" => "Malaysia",
+        "VN" => "Vietnam",
+        "PH" => "Philippines",
+        "ZA" => "South Africa",
+        "EG" => "Egypt",
+        "NG" => "Nigeria",
+        "KE" => "Kenya",
+        "ET" => "Ethiopia",
+        "TZ" => "Tanzania",
+        "ML" => "Mali",
+        "AU" => "Australia",
+        "NZ" => "New Zealand",
+        "FJ" => "Fiji",
+        "PG" => "Papua New Guinea",
+        "SB" => "Solomon Islands",
+        "CR" => "Costa Rica",
+        "PA" => "Panama",
+        "DO" => "Dominican Republic",
+        "UY" => "Uruguay",
+        "PY" => "Paraguay",
+        "BO" => "Bolivia",
+        "IE" => "Ireland",
+        "PL" => "Poland",
+        "RO" => "Romania",
+        "CZ" => "Czech Republic",
+        "IS" => "Iceland",
+        "GR" => "Greece",
+        "HR" => "Croatia",
+        "IL" => "Israel",
+        "SA" => "Saudi Arabia",
+        "AE" => "United Arab Emirates",
+        "TW" => "Taiwan",
+        "LK" => "Sri Lanka",
+        "MN" => "Mongolia",
+        "BD" => "Bangladesh",
+        "GH" => "Ghana",
+        _ => code, // Fall back to the code if no name mapping found
+    }.to_string()
 }
 
 #[cfg(test)]
