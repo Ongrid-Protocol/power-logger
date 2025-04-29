@@ -167,19 +167,33 @@ async fn fetch_peer_nodes(agent: &Agent, config: &NodeSettings) -> Result<Vec<St
         .collect())
 }
 
+fn open_file(path: &Path) -> Result<File, Box<dyn Error>> {
+    let metadata = std::fs::metadata(path)?;
+    if metadata.is_dir() {
+        return Err(format!("Expected a file but found a directory: {}", path.display()).into());
+    }
+
+    let file = std::fs::File::open(path)?;
+    Ok(file)
+}
+
+
 fn load_config() -> Result<(NodeConfig, Config), Box<dyn Error>> {
     let config_path = Path::new("config.yaml");
-    let config_devices_path = Path::new("config/devices.yaml");
+    let config_devices_path = Path::new("devices.yaml");
     
     // Load main config
-    let file = File::open(config_path)?;
+    let file = open_file(config_path)?;
     let node_config: NodeConfig = serde_yaml::from_reader(file)?;
     
     // Load devices config
-    let devices_config = Config::load(config_devices_path)?;
-    
+    let device_file = open_file(config_devices_path)?;
+    let devices_config: Config = serde_yaml::from_reader(device_file)?;
+
     Ok((node_config, devices_config))
 }
+
+
 
 fn save_principal_id(principal: &Principal) -> Result<(), Box<dyn Error>> {
     let mut file = OpenOptions::new()
@@ -394,11 +408,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // --- Log File Setup ---
-    let log_path = "verification_log.txt";
+    let log_path = format!("verification_log.txt");
     let file = OpenOptions::new()
         .create(true)
         .append(true)
-        .open(log_path)?;
+        .open(&log_path)?;
     let log_file: LogFile = Arc::new(Mutex::new(BufWriter::new(file)));
     println!("Logging verification events to: {}", log_path);
     // --- End Log File Setup ---

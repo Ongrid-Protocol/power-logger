@@ -1,0 +1,2458 @@
+# Device Configuration
+# Each device has a unique ID and associated metadata
+
+devices:
+  # Kenya - Major Cities
+  - id: "SG1001KE01"
+    name: "Solar Generator 001"
+    device_type: "solar_controller"
+    location:
+      latitude: -1.2921
+      longitude: 36.8219
+      country: "KE"
+      region: "Africa"
+    specifications:
+      max_wattage: 1800
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "18kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1002KE02"
+    name: "Solar Consumer 002"
+    device_type: "solar_controller"
+    location:
+      latitude: -1.2864
+      longitude: 36.8172
+      country: "KE"
+      region: "Africa"
+    specifications:
+      max_wattage: 1250
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "12.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1003KE03"
+    name: "Solar Generator and Consumer 003"
+    device_type: "solar_controller"
+    location:
+      latitude: -1.3031
+      longitude: 36.8262
+      country: "KE"
+      region: "Africa"
+    specifications:
+      max_wattage: 2200
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "22kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1052US03"
+    name: "Solar Consumer 052"
+    device_type: "solar_controller"
+    location:
+      latitude: 41.8781
+      longitude: -87.6298
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 1250
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "12.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # More Africa Nodes
+  - id: "SG1004KE04"
+    name: "Solar Generator 004"
+    device_type: "solar_controller"
+    location:
+      latitude: -4.0435
+      longitude: 39.6682
+      country: "KE"
+      region: "Africa"
+    specifications:
+      max_wattage: 1700
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "17kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1005NG01"
+    name: "Solar Generator 005"
+    device_type: "solar_controller"
+    location:
+      latitude: 6.5244
+      longitude: 3.3792
+      country: "NG"
+      region: "Africa"
+    specifications:
+      max_wattage: 2000
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "20kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1006NG02"
+    name: "Solar Consumer 006"
+    device_type: "solar_controller"
+    location:
+      latitude: 9.0765
+      longitude: 7.3986
+      country: "NG"
+      region: "Africa"
+    specifications:
+      max_wattage: 1300
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "13kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1007NG03"
+    name: "Solar Generator and Consumer 007"
+    device_type: "solar_controller"
+    location:
+      latitude: 7.3775
+      longitude: 3.9470
+      country: "NG"
+      region: "Africa"
+    specifications:
+      max_wattage: 2400
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "24kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1008ZA01"
+    name: "Solar Generator 008"
+    device_type: "solar_controller"
+    location:
+      latitude: -33.9249
+      longitude: 18.4241
+      country: "ZA"
+      region: "Africa"
+    specifications:
+      max_wattage: 1850
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "18.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1009ZA02"
+    name: "Solar Consumer 009"
+    device_type: "solar_controller"
+    location:
+      latitude: -26.2041
+      longitude: 28.0473
+      country: "ZA"
+      region: "Africa"
+    specifications:
+      max_wattage: 1100
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "11kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1010ZA03"
+    name: "Solar Generator and Consumer 010"
+    device_type: "solar_controller"
+    location:
+      latitude: -29.8587
+      longitude: 31.0218
+      country: "ZA"
+      region: "Africa"
+    specifications:
+      max_wattage: 2300
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "23kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1011EG01"
+    name: "Solar Generator 011"
+    device_type: "solar_controller"
+    location:
+      latitude: 30.0444
+      longitude: 31.2357
+      country: "EG"
+      region: "Africa"
+    specifications:
+      max_wattage: 2100
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "21kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1012EG02"
+    name: "Solar Consumer 012"
+    device_type: "solar_controller"
+    location:
+      latitude: 31.2001
+      longitude: 29.9187
+      country: "EG"
+      region: "Africa"
+    specifications:
+      max_wattage: 950
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "9.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1013MA01"
+    name: "Solar Generator and Consumer 013"
+    device_type: "solar_controller"
+    location:
+      latitude: 33.5731
+      longitude: -7.5898
+      country: "MA"
+      region: "Africa"
+    specifications:
+      max_wattage: 1900
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "19kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1014GH01"
+    name: "Solar Generator 014"
+    device_type: "solar_controller"
+    location:
+      latitude: 5.6037
+      longitude: -0.1870
+      country: "GH"
+      region: "Africa"
+    specifications:
+      max_wattage: 1600
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "16kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1015ET01"
+    name: "Solar Consumer 015"
+    device_type: "solar_controller"
+    location:
+      latitude: 9.0050
+      longitude: 38.7638
+      country: "ET"
+      region: "Africa"
+    specifications:
+      max_wattage: 1150
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "11.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # North America Nodes
+  - id: "SGC1016US01"
+    name: "Solar Generator and Consumer 016"
+    device_type: "solar_controller"
+    location:
+      latitude: 34.0522
+      longitude: -118.2437
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 2550
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "25.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1017US02"
+    name: "Solar Generator 017"
+    device_type: "solar_controller"
+    location:
+      latitude: 40.7128
+      longitude: -74.0060
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 1950
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "19.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1018US03"
+    name: "Solar Consumer 018"
+    device_type: "solar_controller"
+    location:
+      latitude: 29.7604
+      longitude: -95.3698
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 1400
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "14kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1019US04"
+    name: "Solar Generator and Consumer 019"
+    device_type: "solar_controller"
+    location:
+      latitude: 37.7749
+      longitude: -122.4194
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 2700
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "27kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1020CA01"
+    name: "Solar Generator 020"
+    device_type: "solar_controller"
+    location:
+      latitude: 43.6532
+      longitude: -79.3832
+      country: "CA"
+      region: "North America"
+    specifications:
+      max_wattage: 2000
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "20kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1021CA02"
+    name: "Solar Consumer 021"
+    device_type: "solar_controller"
+    location:
+      latitude: 45.5017
+      longitude: -73.5673
+      country: "CA"
+      region: "North America"
+    specifications:
+      max_wattage: 1350
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "13.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1022CA03"
+    name: "Solar Generator and Consumer 022"
+    device_type: "solar_controller"
+    location:
+      latitude: 49.2827
+      longitude: -123.1207
+      country: "CA"
+      region: "North America"
+    specifications:
+      max_wattage: 2400
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "24kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1023MX01"
+    name: "Solar Generator 023"
+    device_type: "solar_controller"
+    location:
+      latitude: 19.4326
+      longitude: -99.1332
+      country: "MX"
+      region: "North America"
+    specifications:
+      max_wattage: 1800
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "18kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1024MX02"
+    name: "Solar Consumer 024"
+    device_type: "solar_controller"
+    location:
+      latitude: 20.6597
+      longitude: -103.3496
+      country: "MX"
+      region: "North America"
+    specifications:
+      max_wattage: 1100
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "11kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1025MX03"
+    name: "Solar Generator and Consumer 025"
+    device_type: "solar_controller"
+    location:
+      latitude: 25.6866
+      longitude: -100.3161
+      country: "MX"
+      region: "North America"
+    specifications:
+      max_wattage: 2100
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "21kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  # South America Nodes
+  - id: "SG1026BR01"
+    name: "Solar Generator 026"
+    device_type: "solar_controller"
+    location:
+      latitude: -23.5505
+      longitude: -46.6333
+      country: "BR"
+      region: "South America"
+    specifications:
+      max_wattage: 2200
+      voltage_range: "220V-240V"
+      frequency_range: "60Hz"
+      battery_capacity: "22kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1027BR02"
+    name: "Solar Consumer 027"
+    device_type: "solar_controller"
+    location:
+      latitude: -22.9068
+      longitude: -43.1729
+      country: "BR"
+      region: "South America"
+    specifications:
+      max_wattage: 1400
+      voltage_range: "220V-240V"
+      frequency_range: "60Hz"
+      battery_capacity: "14kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1028BR03"
+    name: "Solar Generator and Consumer 028"
+    device_type: "solar_controller"
+    location:
+      latitude: -15.7801
+      longitude: -47.9292
+      country: "BR"
+      region: "South America"
+    specifications:
+      max_wattage: 2600
+      voltage_range: "220V-240V"
+      frequency_range: "60Hz"
+      battery_capacity: "26kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1029AR01"
+    name: "Solar Generator 029"
+    device_type: "solar_controller"
+    location:
+      latitude: -34.6037
+      longitude: -58.3816
+      country: "AR"
+      region: "South America"
+    specifications:
+      max_wattage: 1950
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "19.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1030AR02"
+    name: "Solar Consumer 030"
+    device_type: "solar_controller"
+    location:
+      latitude: -31.4173
+      longitude: -64.1837
+      country: "AR"
+      region: "South America"
+    specifications:
+      max_wattage: 1050
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "10.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1031CL01"
+    name: "Solar Generator and Consumer 031"
+    device_type: "solar_controller"
+    location:
+      latitude: -33.4489
+      longitude: -70.6693
+      country: "CL"
+      region: "South America"
+    specifications:
+      max_wattage: 2100
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "21kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1032CO01"
+    name: "Solar Generator 032"
+    device_type: "solar_controller"
+    location:
+      latitude: 4.7110
+      longitude: -74.0721
+      country: "CO"
+      region: "South America"
+    specifications:
+      max_wattage: 1850
+      voltage_range: "220V-240V"
+      frequency_range: "60Hz"
+      battery_capacity: "18.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1033PE01"
+    name: "Solar Consumer 033"
+    device_type: "solar_controller"
+    location:
+      latitude: -12.0464
+      longitude: -77.0428
+      country: "PE"
+      region: "South America"
+    specifications:
+      max_wattage: 1150
+      voltage_range: "220V-240V"
+      frequency_range: "60Hz"
+      battery_capacity: "11.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1034EC01"
+    name: "Solar Generator and Consumer 034"
+    device_type: "solar_controller"
+    location:
+      latitude: -0.1807
+      longitude: -78.4678
+      country: "EC"
+      region: "South America"
+    specifications:
+      max_wattage: 1900
+      voltage_range: "120V-127V"
+      frequency_range: "60Hz"
+      battery_capacity: "19kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1035VE01"
+    name: "Solar Generator 035"
+    device_type: "solar_controller"
+    location:
+      latitude: 10.4806
+      longitude: -66.9036
+      country: "VE"
+      region: "South America"
+    specifications:
+      max_wattage: 1700
+      voltage_range: "120V"
+      frequency_range: "60Hz"
+      battery_capacity: "17kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # Europe Nodes
+  - id: "SC1036GB01"
+    name: "Solar Consumer 036"
+    device_type: "solar_controller"
+    location:
+      latitude: 51.5074
+      longitude: -0.1278
+      country: "GB"
+      region: "Europe"
+    specifications:
+      max_wattage: 1200
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "12kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1037GB02"
+    name: "Solar Generator and Consumer 037"
+    device_type: "solar_controller"
+    location:
+      latitude: 53.4808
+      longitude: -2.2426
+      country: "GB"
+      region: "Europe"
+    specifications:
+      max_wattage: 2250
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "22.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1038DE01"
+    name: "Solar Generator 038"
+    device_type: "solar_controller"
+    location:
+      latitude: 52.5200
+      longitude: 13.4050
+      country: "DE"
+      region: "Europe"
+    specifications:
+      max_wattage: 2400
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "24kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1039DE02"
+    name: "Solar Consumer 039"
+    device_type: "solar_controller"
+    location:
+      latitude: 48.1351
+      longitude: 11.5820
+      country: "DE"
+      region: "Europe"
+    specifications:
+      max_wattage: 1350
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "13.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1040FR01"
+    name: "Solar Generator and Consumer 040"
+    device_type: "solar_controller"
+    location:
+      latitude: 48.8566
+      longitude: 2.3522
+      country: "FR"
+      region: "Europe"
+    specifications:
+      max_wattage: 2150
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "21.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1041IT01"
+    name: "Solar Generator 041"
+    device_type: "solar_controller"
+    location:
+      latitude: 41.9028
+      longitude: 12.4964
+      country: "IT"
+      region: "Europe"
+    specifications:
+      max_wattage: 1950
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "19.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1042ES01"
+    name: "Solar Consumer 042"
+    device_type: "solar_controller"
+    location:
+      latitude: 40.4168
+      longitude: -3.7038
+      country: "ES"
+      region: "Europe"
+    specifications:
+      max_wattage: 1150
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "11.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1043PL01"
+    name: "Solar Generator and Consumer 043"
+    device_type: "solar_controller"
+    location:
+      latitude: 52.2297
+      longitude: 21.0122
+      country: "PL"
+      region: "Europe"
+    specifications:
+      max_wattage: 2050
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "20.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1044NL01"
+    name: "Solar Generator 044"
+    device_type: "solar_controller"
+    location:
+      latitude: 52.3676
+      longitude: 4.9041
+      country: "NL"
+      region: "Europe"
+    specifications:
+      max_wattage: 1750
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "17.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # Asia Nodes
+  - id: "SC1045JP01"
+    name: "Solar Consumer 045"
+    device_type: "solar_controller"
+    location:
+      latitude: 35.6762
+      longitude: 139.6503
+      country: "JP"
+      region: "Asia"
+    specifications:
+      max_wattage: 1050
+      voltage_range: "100V"
+      frequency_range: "50Hz/60Hz"
+      battery_capacity: "10.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1046JP02"
+    name: "Solar Generator and Consumer 046"
+    device_type: "solar_controller"
+    location:
+      latitude: 34.6937
+      longitude: 135.5023
+      country: "JP"
+      region: "Asia"
+    specifications:
+      max_wattage: 2000
+      voltage_range: "100V"
+      frequency_range: "60Hz"
+      battery_capacity: "20kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1047CN01"
+    name: "Solar Generator 047"
+    device_type: "solar_controller"
+    location:
+      latitude: 39.9042
+      longitude: 116.4074
+      country: "CN"
+      region: "Asia"
+    specifications:
+      max_wattage: 2600
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "26kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1048CN02"
+    name: "Solar Consumer 048"
+    device_type: "solar_controller"
+    location:
+      latitude: 31.2304
+      longitude: 121.4737
+      country: "CN"
+      region: "Asia"
+    specifications:
+      max_wattage: 1300
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "13kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1049CN03"
+    name: "Solar Generator and Consumer 049"
+    device_type: "solar_controller"
+    location:
+      latitude: 23.1291
+      longitude: 113.2644
+      country: "CN"
+      region: "Asia"
+    specifications:
+      max_wattage: 2350
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "23.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1050KR01"
+    name: "Solar Generator 050"
+    device_type: "solar_controller"
+    location:
+      latitude: 37.5665
+      longitude: 126.9780
+      country: "KR"
+      region: "Asia"
+    specifications:
+      max_wattage: 1850
+      voltage_range: "220V"
+      frequency_range: "60Hz"
+      battery_capacity: "18.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1051KR02"
+    name: "Solar Consumer 051"
+    device_type: "solar_controller"
+    location:
+      latitude: 35.1796
+      longitude: 129.0756
+      country: "KR"
+      region: "Asia"
+    specifications:
+      max_wattage: 1050
+      voltage_range: "220V"
+      frequency_range: "60Hz"
+      battery_capacity: "10.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1052IN01"
+    name: "Solar Generator and Consumer 052"
+    device_type: "solar_controller"
+    location:
+      latitude: 19.0760
+      longitude: 72.8777
+      country: "IN"
+      region: "Asia"
+    specifications:
+      max_wattage: 2200
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "22kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1053IN02"
+    name: "Solar Generator 053"
+    device_type: "solar_controller"
+    location:
+      latitude: 28.6139
+      longitude: 77.2090
+      country: "IN"
+      region: "Asia"
+    specifications:
+      max_wattage: 1950
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "19.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1054IN03"
+    name: "Solar Consumer 054"
+    device_type: "solar_controller"
+    location:
+      latitude: 12.9716
+      longitude: 77.5946
+      country: "IN"
+      region: "Asia"
+    specifications:
+      max_wattage: 1150
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "11.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1055SG01"
+    name: "Solar Generator and Consumer 055"
+    device_type: "solar_controller"
+    location:
+      latitude: 1.3521
+      longitude: 103.8198
+      country: "SG"
+      region: "Asia"
+    specifications:
+      max_wattage: 1800
+      voltage_range: "230V"
+      frequency_range: "50Hz"
+      battery_capacity: "18kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1056MY01"
+    name: "Solar Generator 056"
+    device_type: "solar_controller"
+    location:
+      latitude: 3.1390
+      longitude: 101.6869
+      country: "MY"
+      region: "Asia"
+    specifications:
+      max_wattage: 1700
+      voltage_range: "240V"
+      frequency_range: "50Hz"
+      battery_capacity: "17kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1057TH01"
+    name: "Solar Consumer 057"
+    device_type: "solar_controller"
+    location:
+      latitude: 13.7563
+      longitude: 100.5018
+      country: "TH"
+      region: "Asia"
+    specifications:
+      max_wattage: 1100
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "11kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1058AE01"
+    name: "Solar Generator and Consumer 058"
+    device_type: "solar_controller"
+    location:
+      latitude: 25.2048
+      longitude: 55.2708
+      country: "AE"
+      region: "Asia"
+    specifications:
+      max_wattage: 2500
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "25kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1059SA01"
+    name: "Solar Generator 059"
+    device_type: "solar_controller"
+    location:
+      latitude: 24.7136
+      longitude: 46.6753
+      country: "SA"
+      region: "Asia"
+    specifications:
+      max_wattage: 2200
+      voltage_range: "220V"
+      frequency_range: "60Hz"
+      battery_capacity: "22kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1060IL01"
+    name: "Solar Consumer 060"
+    device_type: "solar_controller"
+    location:
+      latitude: 32.0853
+      longitude: 34.7818
+      country: "IL"
+      region: "Asia"
+    specifications:
+      max_wattage: 1250
+      voltage_range: "230V"
+      frequency_range: "50Hz"
+      battery_capacity: "12.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # Oceania Nodes
+  - id: "SGC1061AU01"
+    name: "Solar Generator and Consumer 061"
+    device_type: "solar_controller"
+    location:
+      latitude: -33.8688
+      longitude: 151.2093
+      country: "AU"
+      region: "Oceania"
+    specifications:
+      max_wattage: 2300
+      voltage_range: "230V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "23kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1062AU02"
+    name: "Solar Generator 062"
+    device_type: "solar_controller"
+    location:
+      latitude: -37.8136
+      longitude: 144.9631
+      country: "AU"
+      region: "Oceania"
+    specifications:
+      max_wattage: 1950
+      voltage_range: "230V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "19.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1063AU03"
+    name: "Solar Consumer 063"
+    device_type: "solar_controller"
+    location:
+      latitude: -27.4698
+      longitude: 153.0251
+      country: "AU"
+      region: "Oceania"
+    specifications:
+      max_wattage: 1200
+      voltage_range: "230V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "12kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1064AU04"
+    name: "Solar Generator and Consumer 064"
+    device_type: "solar_controller"
+    location:
+      latitude: -31.9505
+      longitude: 115.8605
+      country: "AU"
+      region: "Oceania"
+    specifications:
+      max_wattage: 2450
+      voltage_range: "230V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "24.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1065NZ01"
+    name: "Solar Generator 065"
+    device_type: "solar_controller"
+    location:
+      latitude: -36.8485
+      longitude: 174.7633
+      country: "NZ"
+      region: "Oceania"
+    specifications:
+      max_wattage: 1750
+      voltage_range: "230V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "17.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1066NZ02"
+    name: "Solar Consumer 066"
+    device_type: "solar_controller"
+    location:
+      latitude: -41.2865
+      longitude: 174.7762
+      country: "NZ"
+      region: "Oceania"
+    specifications:
+      max_wattage: 1050
+      voltage_range: "230V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "10.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1067FJ01"
+    name: "Solar Generator and Consumer 067"
+    device_type: "solar_controller"
+    location:
+      latitude: -18.1416
+      longitude: 178.4419
+      country: "FJ"
+      region: "Oceania"
+    specifications:
+      max_wattage: 1650
+      voltage_range: "240V"
+      frequency_range: "50Hz"
+      battery_capacity: "16.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1068PG01"
+    name: "Solar Generator 068"
+    device_type: "solar_controller"
+    location:
+      latitude: -9.4438
+      longitude: 147.1803
+      country: "PG"
+      region: "Oceania"
+    specifications:
+      max_wattage: 1500
+      voltage_range: "240V"
+      frequency_range: "50Hz"
+      battery_capacity: "15kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1069NC01"
+    name: "Solar Consumer 069"
+    device_type: "solar_controller"
+    location:
+      latitude: -22.2758
+      longitude: 166.4581
+      country: "NC"
+      region: "Oceania"
+    specifications:
+      max_wattage: 1150
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "11.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1070SB01"
+    name: "Solar Generator and Consumer 070"
+    device_type: "solar_controller"
+    location:
+      latitude: -9.4456
+      longitude: 159.9728
+      country: "SB"
+      region: "Oceania"
+    specifications:
+      max_wattage: 1400
+      voltage_range: "230V"
+      frequency_range: "50Hz"
+      battery_capacity: "14kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  # Additional Africa Nodes
+  - id: "SG1071TZ01"
+    name: "Solar Generator 071"
+    device_type: "solar_controller"
+    location:
+      latitude: -6.7924
+      longitude: 39.2083
+      country: "TZ"
+      region: "Africa"
+    specifications:
+      max_wattage: 1650
+      voltage_range: "230V"
+      frequency_range: "50Hz"
+      battery_capacity: "16.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1072UG01"
+    name: "Solar Consumer 072"
+    device_type: "solar_controller"
+    location:
+      latitude: 0.3476
+      longitude: 32.5825
+      country: "UG"
+      region: "Africa"
+    specifications:
+      max_wattage: 950
+      voltage_range: "240V"
+      frequency_range: "50Hz"
+      battery_capacity: "9.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1073RW01"
+    name: "Solar Generator and Consumer 073"
+    device_type: "solar_controller"
+    location:
+      latitude: -1.9403
+      longitude: 30.0596
+      country: "RW"
+      region: "Africa"
+    specifications:
+      max_wattage: 1750
+      voltage_range: "230V"
+      frequency_range: "50Hz"
+      battery_capacity: "17.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1074SN01"
+    name: "Solar Generator 074"
+    device_type: "solar_controller"
+    location:
+      latitude: 14.7167
+      longitude: -17.4677
+      country: "SN"
+      region: "Africa"
+    specifications:
+      max_wattage: 1600
+      voltage_range: "230V"
+      frequency_range: "50Hz"
+      battery_capacity: "16kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1075CI01"
+    name: "Solar Consumer 075"
+    device_type: "solar_controller"
+    location:
+      latitude: 5.3364
+      longitude: -4.0305
+      country: "CI"
+      region: "Africa"
+    specifications:
+      max_wattage: 1100
+      voltage_range: "220V-230V"
+      frequency_range: "50Hz"
+      battery_capacity: "11kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # Additional North America Nodes
+  - id: "SGC1076US05"
+    name: "Solar Generator and Consumer 076"
+    device_type: "solar_controller"
+    location:
+      latitude: 32.7767
+      longitude: -96.7970
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 2650
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "26.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1077US06"
+    name: "Solar Generator 077"
+    device_type: "solar_controller"
+    location:
+      latitude: 39.7392
+      longitude: -104.9903
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 2100
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "21kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1078US07"
+    name: "Solar Consumer 078"
+    device_type: "solar_controller"
+    location:
+      latitude: 47.6062
+      longitude: -122.3321
+      country: "US"
+      region: "North America"
+    specifications:
+      max_wattage: 1350
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "13.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1079CA04"
+    name: "Solar Generator and Consumer 079"
+    device_type: "solar_controller"
+    location:
+      latitude: 51.0486
+      longitude: -114.0708
+      country: "CA"
+      region: "North America"
+    specifications:
+      max_wattage: 2350
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "23.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1080CA05"
+    name: "Solar Generator 080"
+    device_type: "solar_controller"
+    location:
+      latitude: 53.5461
+      longitude: -113.4938
+      country: "CA"
+      region: "North America"
+    specifications:
+      max_wattage: 1800
+      voltage_range: "110V-120V"
+      frequency_range: "60Hz"
+      battery_capacity: "18kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # Additional Europe Nodes
+  - id: "SC1081SE01"
+    name: "Solar Consumer 081"
+    device_type: "solar_controller"
+    location:
+      latitude: 59.3293
+      longitude: 18.0686
+      country: "SE"
+      region: "Europe"
+    specifications:
+      max_wattage: 1150
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "11.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1082NO01"
+    name: "Solar Generator and Consumer 082"
+    device_type: "solar_controller"
+    location:
+      latitude: 59.9139
+      longitude: 10.7522
+      country: "NO"
+      region: "Europe"
+    specifications:
+      max_wattage: 2050
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "20.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1083FI01"
+    name: "Solar Generator 083"
+    device_type: "solar_controller"
+    location:
+      latitude: 60.1699
+      longitude: 24.9384
+      country: "FI"
+      region: "Europe"
+    specifications:
+      max_wattage: 1750
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "17.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1084DK01"
+    name: "Solar Consumer 084"
+    device_type: "solar_controller"
+    location:
+      latitude: 55.6761
+      longitude: 12.5683
+      country: "DK"
+      region: "Europe"
+    specifications:
+      max_wattage: 1050
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "10.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1085CH01"
+    name: "Solar Generator and Consumer 085"
+    device_type: "solar_controller"
+    location:
+      latitude: 47.3769
+      longitude: 8.5417
+      country: "CH"
+      region: "Europe"
+    specifications:
+      max_wattage: 2250
+      voltage_range: "220V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "22.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  # Additional Asia Nodes
+  - id: "SG1086ID01"
+    name: "Solar Generator 086"
+    device_type: "solar_controller"
+    location:
+      latitude: -6.2088
+      longitude: 106.8456
+      country: "ID"
+      region: "Asia"
+    specifications:
+      max_wattage: 1800
+      voltage_range: "220V-230V"
+      frequency_range: "50Hz"
+      battery_capacity: "18kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1087PH01"
+    name: "Solar Consumer 087"
+    device_type: "solar_controller"
+    location:
+      latitude: 14.5995
+      longitude: 120.9842
+      country: "PH"
+      region: "Asia"
+    specifications:
+      max_wattage: 1200
+      voltage_range: "220V"
+      frequency_range: "60Hz"
+      battery_capacity: "12kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1088VN01"
+    name: "Solar Generator and Consumer 088"
+    device_type: "solar_controller"
+    location:
+      latitude: 21.0285
+      longitude: 105.8542
+      country: "VN"
+      region: "Asia"
+    specifications:
+      max_wattage: 1950
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "19.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1089BD01"
+    name: "Solar Generator 089"
+    device_type: "solar_controller"
+    location:
+      latitude: 23.8103
+      longitude: 90.4125
+      country: "BD"
+      region: "Asia"
+    specifications:
+      max_wattage: 1650
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "16.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1090PK01"
+    name: "Solar Consumer 090"
+    device_type: "solar_controller"
+    location:
+      latitude: 24.8607
+      longitude: 67.0011
+      country: "PK"
+      region: "Asia"
+    specifications:
+      max_wattage: 1100
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "11kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # Additional South America Nodes
+  - id: "SGC1091UY01"
+    name: "Solar Generator and Consumer 091"
+    device_type: "solar_controller"
+    location:
+      latitude: -34.9011
+      longitude: -56.1645
+      country: "UY"
+      region: "South America"
+    specifications:
+      max_wattage: 1850
+      voltage_range: "220V-230V"
+      frequency_range: "50Hz"
+      battery_capacity: "18.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1092PY01"
+    name: "Solar Generator 092"
+    device_type: "solar_controller"
+    location:
+      latitude: -25.2637
+      longitude: -57.5759
+      country: "PY"
+      region: "South America"
+    specifications:
+      max_wattage: 1600
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "16kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1093BO01"
+    name: "Solar Consumer 093"
+    device_type: "solar_controller"
+    location:
+      latitude: -16.4897
+      longitude: -68.1193
+      country: "BO"
+      region: "South America"
+    specifications:
+      max_wattage: 1000
+      voltage_range: "230V"
+      frequency_range: "50Hz"
+      battery_capacity: "10kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # Additional Oceania Nodes
+  - id: "SGC1094NZ03"
+    name: "Solar Generator and Consumer 094"
+    device_type: "solar_controller"
+    location:
+      latitude: -43.5320
+      longitude: 172.6306
+      country: "NZ"
+      region: "Oceania"
+    specifications:
+      max_wattage: 2050
+      voltage_range: "230V-240V"
+      frequency_range: "50Hz"
+      battery_capacity: "20.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1095FJ02"
+    name: "Solar Generator 095"
+    device_type: "solar_controller"
+    location:
+      latitude: -17.7134
+      longitude: 178.0650
+      country: "FJ"
+      region: "Oceania"
+    specifications:
+      max_wattage: 1500
+      voltage_range: "240V"
+      frequency_range: "50Hz"
+      battery_capacity: "15kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  # More Africa Nodes
+  - id: "SC1096CM01"
+    name: "Solar Consumer 096"
+    device_type: "solar_controller"
+    location:
+      latitude: 3.8480
+      longitude: 11.5021
+      country: "CM"
+      region: "Africa"
+    specifications:
+      max_wattage: 1050
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "10.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1097CD01"
+    name: "Solar Generator and Consumer 097"
+    device_type: "solar_controller"
+    location:
+      latitude: -4.4419
+      longitude: 15.2663
+      country: "CD"
+      region: "Africa"
+    specifications:
+      max_wattage: 1750
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "17.5kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SG1098MZ01"
+    name: "Solar Generator 098"
+    device_type: "solar_controller"
+    location:
+      latitude: -25.9655
+      longitude: 32.5832
+      country: "MZ"
+      region: "Africa"
+    specifications:
+      max_wattage: 1550
+      voltage_range: "220V"
+      frequency_range: "50Hz"
+      battery_capacity: "15.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SC1099DZ01"
+    name: "Solar Consumer 099"
+    device_type: "solar_controller"
+    location:
+      latitude: 36.7538
+      longitude: 3.0588
+      country: "DZ"
+      region: "Africa"
+    specifications:
+      max_wattage: 1150
+      voltage_range: "230V"
+      frequency_range: "50Hz"
+      battery_capacity: "11.5kWh"
+      phase_type: "single"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 4
+      - sensor_type: "voltage"
+        count: 4
+      - sensor_type: "light"
+        count: 1
+
+  - id: "SGC1100TN01"
+    name: "Solar Generator and Consumer 100"
+    device_type: "solar_controller"
+    location:
+      latitude: 36.8065
+      longitude: 10.1815
+      country: "TN"
+      region: "Africa"
+    specifications:
+      max_wattage: 2000
+      voltage_range: "230V"
+      frequency_range: "50Hz"
+      battery_capacity: "20kWh"
+      phase_type: "three"
+    sensors:
+      - sensor_type: "temperature"
+        count: 2
+      - sensor_type: "current"
+        count: 6
+      - sensor_type: "voltage"
+        count: 6
+      - sensor_type: "light"
+        count: 1
+
+# Default configuration for new devices
+defaults:
+  sensors:
+    temperature:
+      sampling_rate: "1s"
+      accuracy: "±0.5°C"
+    current:
+      sampling_rate: "100ms"
+      accuracy: "±1%"
+    voltage:
+      sampling_rate: "100ms"
+      accuracy: "±0.5%"
+  logging:
+    interval: "1m"
+    format: "json"
+    retention: "7d" 

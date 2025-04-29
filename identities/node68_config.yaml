@@ -1,0 +1,10 @@
+node:
+  name: "node68"
+  port: 33402
+  device_id: "SGC1067FJ01"
+  ic:
+    network: "local"
+    canister_id: "bkyz2-fmaaa-aaaaa-qaaaq-cai"
+    is_local: true
+    url: "http://127.0.0.1:4943"
+  peer_nodes: []

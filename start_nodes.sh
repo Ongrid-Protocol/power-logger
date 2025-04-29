@@ -18,8 +18,8 @@ ls -la
 mkdir -p "${LOG_DIR:-/app/logs}"
 
 # Show binary permissions
-ls -la ./p2p
+ls -la ./power-logger
 
 # Start the P2P node
 echo "Starting P2P node..."
-exec ./p2p 
+exec ./power-logger 

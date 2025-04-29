@@ -1,9 +1,15 @@
 #!/bin/bash
 
-# This script generates a docker-compose.yml file with 100 node services
+# Source the device IDs from generate_configs.sh to ensure consistency
+source generate_configs.sh
+
+# This script generates a docker-compose.yml file with services for each node
+echo "Generating docker-compose.yml..."
 
 # Base configuration
 cat > docker-compose.yml << EOL
+version: '3.8'
+
 # Common build definition using YAML anchors
 x-node-build: &node-build
   build:
@@ -13,24 +19,27 @@ x-node-build: &node-build
 services:
 EOL
 
-# Add nodes from 1 to 100
-for i in {1..100}; do
-  MDNS_PORT=$((5353 + i))
-  
-  cat >> docker-compose.yml << EOL
-  node${i}:
+# Add nodes using the DEVICE_IDS array
+for i in "${!DEVICE_IDS[@]}"; do
+    NODE_NUM=$((i + 1))
+    DEVICE_ID="${DEVICE_IDS[$i]}"
+    MDNS_PORT=$((5353 + NODE_NUM))
+    
+    cat >> docker-compose.yml << EOL
+  node${NODE_NUM}:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node${i}_config.yaml:/app/config.yaml:ro
-      - ./logs/node${i}:/app/logs
-      - ./logs/node${i}/verification_log.txt:/app/verification_log.txt
+      - ./identities/node${NODE_NUM}_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
+      - ./logs/node${NODE_NUM}:/app/logs
     environment:
-      - NODE_NAME=node${i}
+      - NODE_NAME=node${NODE_NUM}
+      - DEVICE_ID=${DEVICE_ID}
       - RUST_LOG=info
       - MDNS_PORT=${MDNS_PORT}
     network_mode: host
-    command: sh -c "sleep $((i * 2 % 10 + 5)) && /app/p2p"
+    command: ["${DEVICE_ID}"]
     deploy:
       resources:
         limits:
@@ -59,4 +68,14 @@ volumes:
   ic_state:
 EOL
 
-echo "Generated docker-compose.yml with 100 nodes" 
+echo "Generated docker-compose.yml with ${#DEVICE_IDS[@]} nodes"
+
+# Create required directories
+echo "Creating log directories..."
+for i in "${!DEVICE_IDS[@]}"; do
+    NODE_NUM=$((i + 1))
+    mkdir -p "./logs/node${NODE_NUM}"
+    touch "./logs/node${NODE_NUM}/verification_log.txt"
+done
+
+echo "Setup complete!"

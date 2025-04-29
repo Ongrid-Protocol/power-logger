@@ -1,6 +1,7 @@
 # Stage 1: Build environment
 FROM rust:latest AS builder
 
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
@@ -15,51 +16,89 @@ RUN useradd -m -u 1001 rust
 WORKDIR /app
 RUN chown rust:rust /app
 
+# Switch to non-root user
 USER rust
 
+# Create cargo directory and set ownership
 RUN mkdir -p /home/rust/.cargo && \
     chown -R rust:rust /home/rust/.cargo
 
-# Copy dependency files
+# Copy dependency files with explicit ownership
 COPY --chown=rust:rust Cargo.toml Cargo.lock ./
 
-# Dummy build for caching
+# Create dummy src and src/bin for dependency caching
 RUN mkdir -p src/bin && \
     echo 'fn main() { println!("dummy"); }' > src/main.rs && \
     echo 'fn main() { println!("dummy bin"); }' > src/bin/dummy.rs
 
-RUN cargo build --release || true
+# First build for dependency caching
+RUN cargo build --release || (echo "Initial build failed, continuing with source build..." && true)
 
-# Remove dummy
-RUN rm -f target/release/deps/p2p*
+# Clean up dummy build
+RUN rm -f target/release/deps/power-logger*
 
-# Copy real source
+# Copy the source files
 COPY --chown=rust:rust src ./src/
 COPY --chown=rust:rust identities ./identities/
-COPY --chown=rust:rust config ./config/
 
-# Final build
+# Final build with error handling
 RUN cargo build --release || (echo "Build failed, showing cargo output:" && cargo build --release --verbose && exit 1)
 
 # Stage 2: Runtime environment
-FROM debian:bullseye-slim
+FROM rust:latest
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Create non-root user for running
+RUN useradd -m -u 1001 app && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
     libssl-dev \
     ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# Non-root user
-RUN useradd -m -u 1001 app
 WORKDIR /app
 
-COPY --from=builder /app/target/release/p2p .
+# Create necessary directories
+RUN mkdir -p /app/data /app/logs && \
+    chown -R app:app /app
+
+# Setup log rotation
+COPY --chown=root:root <<EOF /etc/logrotate.d/power-logger
+/app/logs/*.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 app app
+}
+EOF
+
+# Copy built binary and config
+COPY --from=builder /app/target/release/power-logger .
 COPY --from=builder /app/identities ./identities/
 
+RUN ls -la /app/power-logger && file /app/power-logger && ldd /app/power-logger
+
+# Set proper permissions
+RUN chown -R app:app /app && \
+    chmod -R 755 /app
+
+# Switch to non-root user
 USER app
 
-# Environment variables passed at runtime
-ENV DEVICE_ID=SG1001KE01
+COPY --chown=app:app entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
-# Start the node
-CMD ["sh", "-c", "./p2p $DEVICE_ID"]
+# Environment variables
+ENV RUST_LOG=debug
+
+# Verify setup
+RUN ls -la /app && \
+    ls -la /app/identities && \
+    echo "NODE_NAME is: ${NODE_NAME}"
+
+# Set the entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
+# Allow CMD to provide the device ID
+CMD ["${DEVICE_ID}"]

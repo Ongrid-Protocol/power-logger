@@ -1,3 +1,5 @@
+version: '3.8'
+
 # Common build definition using YAML anchors
 x-node-build: &node-build
   build:
@@ -9,15 +11,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node1_config.yaml:/app/config.yaml:ro
+      - ./identities/node1_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node1:/app/logs
-      - ./logs/node1/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node1
+      - DEVICE_ID=SG1001KE01
       - RUST_LOG=info
       - MDNS_PORT=5354
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SG1001KE01"]
     deploy:
       resources:
         limits:
@@ -28,15 +31,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node2_config.yaml:/app/config.yaml:ro
+      - ./identities/node2_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node2:/app/logs
-      - ./logs/node2/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node2
+      - DEVICE_ID=SC1002KE02
       - RUST_LOG=info
       - MDNS_PORT=5355
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SC1002KE02"]
     deploy:
       resources:
         limits:
@@ -47,15 +51,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node3_config.yaml:/app/config.yaml:ro
+      - ./identities/node3_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node3:/app/logs
-      - ./logs/node3/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node3
+      - DEVICE_ID=SGC1003KE03
       - RUST_LOG=info
       - MDNS_PORT=5356
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SGC1003KE03"]
     deploy:
       resources:
         limits:
@@ -66,15 +71,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node4_config.yaml:/app/config.yaml:ro
+      - ./identities/node4_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node4:/app/logs
-      - ./logs/node4/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node4
+      - DEVICE_ID=SC1052US03
       - RUST_LOG=info
       - MDNS_PORT=5357
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SC1052US03"]
     deploy:
       resources:
         limits:
@@ -85,15 +91,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node5_config.yaml:/app/config.yaml:ro
+      - ./identities/node5_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node5:/app/logs
-      - ./logs/node5/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node5
+      - DEVICE_ID=SG1004KE04
       - RUST_LOG=info
       - MDNS_PORT=5358
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SG1004KE04"]
     deploy:
       resources:
         limits:
@@ -104,15 +111,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node6_config.yaml:/app/config.yaml:ro
+      - ./identities/node6_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node6:/app/logs
-      - ./logs/node6/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node6
+      - DEVICE_ID=SG1005NG01
       - RUST_LOG=info
       - MDNS_PORT=5359
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SG1005NG01"]
     deploy:
       resources:
         limits:
@@ -123,15 +131,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node7_config.yaml:/app/config.yaml:ro
+      - ./identities/node7_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node7:/app/logs
-      - ./logs/node7/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node7
+      - DEVICE_ID=SC1006NG02
       - RUST_LOG=info
       - MDNS_PORT=5360
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SC1006NG02"]
     deploy:
       resources:
         limits:
@@ -142,15 +151,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node8_config.yaml:/app/config.yaml:ro
+      - ./identities/node8_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node8:/app/logs
-      - ./logs/node8/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node8
+      - DEVICE_ID=SGC1007NG03
       - RUST_LOG=info
       - MDNS_PORT=5361
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SGC1007NG03"]
     deploy:
       resources:
         limits:
@@ -161,15 +171,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node9_config.yaml:/app/config.yaml:ro
+      - ./identities/node9_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node9:/app/logs
-      - ./logs/node9/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node9
+      - DEVICE_ID=SG1008ZA01
       - RUST_LOG=info
       - MDNS_PORT=5362
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SG1008ZA01"]
     deploy:
       resources:
         limits:
@@ -180,15 +191,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node10_config.yaml:/app/config.yaml:ro
+      - ./identities/node10_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node10:/app/logs
-      - ./logs/node10/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node10
+      - DEVICE_ID=SC1009ZA02
       - RUST_LOG=info
       - MDNS_PORT=5363
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SC1009ZA02"]
     deploy:
       resources:
         limits:
@@ -199,15 +211,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node11_config.yaml:/app/config.yaml:ro
+      - ./identities/node11_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node11:/app/logs
-      - ./logs/node11/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node11
+      - DEVICE_ID=SGC1010ZA03
       - RUST_LOG=info
       - MDNS_PORT=5364
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SGC1010ZA03"]
     deploy:
       resources:
         limits:
@@ -218,15 +231,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node12_config.yaml:/app/config.yaml:ro
+      - ./identities/node12_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node12:/app/logs
-      - ./logs/node12/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node12
+      - DEVICE_ID=SG1011EG01
       - RUST_LOG=info
       - MDNS_PORT=5365
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SG1011EG01"]
     deploy:
       resources:
         limits:
@@ -237,15 +251,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node13_config.yaml:/app/config.yaml:ro
+      - ./identities/node13_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node13:/app/logs
-      - ./logs/node13/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node13
+      - DEVICE_ID=SC1012EG02
       - RUST_LOG=info
       - MDNS_PORT=5366
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SC1012EG02"]
     deploy:
       resources:
         limits:
@@ -256,15 +271,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node14_config.yaml:/app/config.yaml:ro
+      - ./identities/node14_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node14:/app/logs
-      - ./logs/node14/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node14
+      - DEVICE_ID=SGC1013MA01
       - RUST_LOG=info
       - MDNS_PORT=5367
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SGC1013MA01"]
     deploy:
       resources:
         limits:
@@ -275,15 +291,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node15_config.yaml:/app/config.yaml:ro
+      - ./identities/node15_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node15:/app/logs
-      - ./logs/node15/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node15
+      - DEVICE_ID=SG1014GH01
       - RUST_LOG=info
       - MDNS_PORT=5368
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SG1014GH01"]
     deploy:
       resources:
         limits:
@@ -294,15 +311,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node16_config.yaml:/app/config.yaml:ro
+      - ./identities/node16_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node16:/app/logs
-      - ./logs/node16/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node16
+      - DEVICE_ID=SC1015ET01
       - RUST_LOG=info
       - MDNS_PORT=5369
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SC1015ET01"]
     deploy:
       resources:
         limits:
@@ -313,15 +331,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node17_config.yaml:/app/config.yaml:ro
+      - ./identities/node17_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node17:/app/logs
-      - ./logs/node17/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node17
+      - DEVICE_ID=SGC1016US01
       - RUST_LOG=info
       - MDNS_PORT=5370
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SGC1016US01"]
     deploy:
       resources:
         limits:
@@ -332,15 +351,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node18_config.yaml:/app/config.yaml:ro
+      - ./identities/node18_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node18:/app/logs
-      - ./logs/node18/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node18
+      - DEVICE_ID=SG1017US02
       - RUST_LOG=info
       - MDNS_PORT=5371
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SG1017US02"]
     deploy:
       resources:
         limits:
@@ -351,15 +371,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node19_config.yaml:/app/config.yaml:ro
+      - ./identities/node19_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node19:/app/logs
-      - ./logs/node19/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node19
+      - DEVICE_ID=SC1018US03
       - RUST_LOG=info
       - MDNS_PORT=5372
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SC1018US03"]
     deploy:
       resources:
         limits:
@@ -370,15 +391,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node20_config.yaml:/app/config.yaml:ro
+      - ./identities/node20_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node20:/app/logs
-      - ./logs/node20/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node20
+      - DEVICE_ID=SGC1019US04
       - RUST_LOG=info
       - MDNS_PORT=5373
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SGC1019US04"]
     deploy:
       resources:
         limits:
@@ -389,15 +411,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node21_config.yaml:/app/config.yaml:ro
+      - ./identities/node21_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node21:/app/logs
-      - ./logs/node21/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node21
+      - DEVICE_ID=SG1020CA01
       - RUST_LOG=info
       - MDNS_PORT=5374
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SG1020CA01"]
     deploy:
       resources:
         limits:
@@ -408,15 +431,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node22_config.yaml:/app/config.yaml:ro
+      - ./identities/node22_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node22:/app/logs
-      - ./logs/node22/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node22
+      - DEVICE_ID=SC1021CA02
       - RUST_LOG=info
       - MDNS_PORT=5375
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SC1021CA02"]
     deploy:
       resources:
         limits:
@@ -427,15 +451,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node23_config.yaml:/app/config.yaml:ro
+      - ./identities/node23_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node23:/app/logs
-      - ./logs/node23/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node23
+      - DEVICE_ID=SGC1022CA03
       - RUST_LOG=info
       - MDNS_PORT=5376
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SGC1022CA03"]
     deploy:
       resources:
         limits:
@@ -446,15 +471,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node24_config.yaml:/app/config.yaml:ro
+      - ./identities/node24_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node24:/app/logs
-      - ./logs/node24/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node24
+      - DEVICE_ID=SG1023MX01
       - RUST_LOG=info
       - MDNS_PORT=5377
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SG1023MX01"]
     deploy:
       resources:
         limits:
@@ -465,15 +491,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node25_config.yaml:/app/config.yaml:ro
+      - ./identities/node25_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node25:/app/logs
-      - ./logs/node25/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node25
+      - DEVICE_ID=SC1024MX02
       - RUST_LOG=info
       - MDNS_PORT=5378
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SC1024MX02"]
     deploy:
       resources:
         limits:
@@ -484,15 +511,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node26_config.yaml:/app/config.yaml:ro
+      - ./identities/node26_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node26:/app/logs
-      - ./logs/node26/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node26
+      - DEVICE_ID=SGC1025MX03
       - RUST_LOG=info
       - MDNS_PORT=5379
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SGC1025MX03"]
     deploy:
       resources:
         limits:
@@ -503,15 +531,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node27_config.yaml:/app/config.yaml:ro
+      - ./identities/node27_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node27:/app/logs
-      - ./logs/node27/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node27
+      - DEVICE_ID=SG1026BR01
       - RUST_LOG=info
       - MDNS_PORT=5380
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SG1026BR01"]
     deploy:
       resources:
         limits:
@@ -522,15 +551,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node28_config.yaml:/app/config.yaml:ro
+      - ./identities/node28_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node28:/app/logs
-      - ./logs/node28/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node28
+      - DEVICE_ID=SC1027BR02
       - RUST_LOG=info
       - MDNS_PORT=5381
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SC1027BR02"]
     deploy:
       resources:
         limits:
@@ -541,15 +571,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node29_config.yaml:/app/config.yaml:ro
+      - ./identities/node29_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node29:/app/logs
-      - ./logs/node29/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node29
+      - DEVICE_ID=SGC1028BR03
       - RUST_LOG=info
       - MDNS_PORT=5382
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SGC1028BR03"]
     deploy:
       resources:
         limits:
@@ -560,15 +591,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node30_config.yaml:/app/config.yaml:ro
+      - ./identities/node30_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node30:/app/logs
-      - ./logs/node30/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node30
+      - DEVICE_ID=SG1029AR01
       - RUST_LOG=info
       - MDNS_PORT=5383
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SG1029AR01"]
     deploy:
       resources:
         limits:
@@ -579,15 +611,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node31_config.yaml:/app/config.yaml:ro
+      - ./identities/node31_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node31:/app/logs
-      - ./logs/node31/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node31
+      - DEVICE_ID=SC1030AR02
       - RUST_LOG=info
       - MDNS_PORT=5384
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SC1030AR02"]
     deploy:
       resources:
         limits:
@@ -598,15 +631,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node32_config.yaml:/app/config.yaml:ro
+      - ./identities/node32_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node32:/app/logs
-      - ./logs/node32/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node32
+      - DEVICE_ID=SGC1031CL01
       - RUST_LOG=info
       - MDNS_PORT=5385
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SGC1031CL01"]
     deploy:
       resources:
         limits:
@@ -617,15 +651,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node33_config.yaml:/app/config.yaml:ro
+      - ./identities/node33_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node33:/app/logs
-      - ./logs/node33/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node33
+      - DEVICE_ID=SG1032CO01
       - RUST_LOG=info
       - MDNS_PORT=5386
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SG1032CO01"]
     deploy:
       resources:
         limits:
@@ -636,15 +671,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node34_config.yaml:/app/config.yaml:ro
+      - ./identities/node34_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node34:/app/logs
-      - ./logs/node34/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node34
+      - DEVICE_ID=SC1033PE01
       - RUST_LOG=info
       - MDNS_PORT=5387
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SC1033PE01"]
     deploy:
       resources:
         limits:
@@ -655,15 +691,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node35_config.yaml:/app/config.yaml:ro
+      - ./identities/node35_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node35:/app/logs
-      - ./logs/node35/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node35
+      - DEVICE_ID=SGC1034EC01
       - RUST_LOG=info
       - MDNS_PORT=5388
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SGC1034EC01"]
     deploy:
       resources:
         limits:
@@ -674,15 +711,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node36_config.yaml:/app/config.yaml:ro
+      - ./identities/node36_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node36:/app/logs
-      - ./logs/node36/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node36
+      - DEVICE_ID=SG1035VE01
       - RUST_LOG=info
       - MDNS_PORT=5389
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SG1035VE01"]
     deploy:
       resources:
         limits:
@@ -693,15 +731,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node37_config.yaml:/app/config.yaml:ro
+      - ./identities/node37_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node37:/app/logs
-      - ./logs/node37/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node37
+      - DEVICE_ID=SC1036GB01
       - RUST_LOG=info
       - MDNS_PORT=5390
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SC1036GB01"]
     deploy:
       resources:
         limits:
@@ -712,15 +751,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node38_config.yaml:/app/config.yaml:ro
+      - ./identities/node38_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node38:/app/logs
-      - ./logs/node38/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node38
+      - DEVICE_ID=SGC1037GB02
       - RUST_LOG=info
       - MDNS_PORT=5391
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SGC1037GB02"]
     deploy:
       resources:
         limits:
@@ -731,15 +771,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node39_config.yaml:/app/config.yaml:ro
+      - ./identities/node39_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node39:/app/logs
-      - ./logs/node39/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node39
+      - DEVICE_ID=SG1038DE01
       - RUST_LOG=info
       - MDNS_PORT=5392
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SG1038DE01"]
     deploy:
       resources:
         limits:
@@ -750,15 +791,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node40_config.yaml:/app/config.yaml:ro
+      - ./identities/node40_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node40:/app/logs
-      - ./logs/node40/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node40
+      - DEVICE_ID=SC1039DE02
       - RUST_LOG=info
       - MDNS_PORT=5393
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SC1039DE02"]
     deploy:
       resources:
         limits:
@@ -769,15 +811,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node41_config.yaml:/app/config.yaml:ro
+      - ./identities/node41_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node41:/app/logs
-      - ./logs/node41/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node41
+      - DEVICE_ID=SGC1040FR01
       - RUST_LOG=info
       - MDNS_PORT=5394
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SGC1040FR01"]
     deploy:
       resources:
         limits:
@@ -788,15 +831,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node42_config.yaml:/app/config.yaml:ro
+      - ./identities/node42_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node42:/app/logs
-      - ./logs/node42/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node42
+      - DEVICE_ID=SG1041IT01
       - RUST_LOG=info
       - MDNS_PORT=5395
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SG1041IT01"]
     deploy:
       resources:
         limits:
@@ -807,15 +851,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node43_config.yaml:/app/config.yaml:ro
+      - ./identities/node43_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node43:/app/logs
-      - ./logs/node43/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node43
+      - DEVICE_ID=SC1042ES01
       - RUST_LOG=info
       - MDNS_PORT=5396
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SC1042ES01"]
     deploy:
       resources:
         limits:
@@ -826,15 +871,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node44_config.yaml:/app/config.yaml:ro
+      - ./identities/node44_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node44:/app/logs
-      - ./logs/node44/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node44
+      - DEVICE_ID=SGC1043PL01
       - RUST_LOG=info
       - MDNS_PORT=5397
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SGC1043PL01"]
     deploy:
       resources:
         limits:
@@ -845,15 +891,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node45_config.yaml:/app/config.yaml:ro
+      - ./identities/node45_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node45:/app/logs
-      - ./logs/node45/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node45
+      - DEVICE_ID=SG1044NL01
       - RUST_LOG=info
       - MDNS_PORT=5398
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SG1044NL01"]
     deploy:
       resources:
         limits:
@@ -864,15 +911,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node46_config.yaml:/app/config.yaml:ro
+      - ./identities/node46_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node46:/app/logs
-      - ./logs/node46/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node46
+      - DEVICE_ID=SC1045JP01
       - RUST_LOG=info
       - MDNS_PORT=5399
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SC1045JP01"]
     deploy:
       resources:
         limits:
@@ -883,15 +931,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node47_config.yaml:/app/config.yaml:ro
+      - ./identities/node47_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node47:/app/logs
-      - ./logs/node47/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node47
+      - DEVICE_ID=SGC1046JP02
       - RUST_LOG=info
       - MDNS_PORT=5400
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SGC1046JP02"]
     deploy:
       resources:
         limits:
@@ -902,15 +951,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node48_config.yaml:/app/config.yaml:ro
+      - ./identities/node48_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node48:/app/logs
-      - ./logs/node48/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node48
+      - DEVICE_ID=SG1047CN01
       - RUST_LOG=info
       - MDNS_PORT=5401
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SG1047CN01"]
     deploy:
       resources:
         limits:
@@ -921,15 +971,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node49_config.yaml:/app/config.yaml:ro
+      - ./identities/node49_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node49:/app/logs
-      - ./logs/node49/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node49
+      - DEVICE_ID=SC1048CN02
       - RUST_LOG=info
       - MDNS_PORT=5402
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SC1048CN02"]
     deploy:
       resources:
         limits:
@@ -940,15 +991,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node50_config.yaml:/app/config.yaml:ro
+      - ./identities/node50_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node50:/app/logs
-      - ./logs/node50/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node50
+      - DEVICE_ID=SGC1049CN03
       - RUST_LOG=info
       - MDNS_PORT=5403
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SGC1049CN03"]
     deploy:
       resources:
         limits:
@@ -959,15 +1011,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node51_config.yaml:/app/config.yaml:ro
+      - ./identities/node51_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node51:/app/logs
-      - ./logs/node51/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node51
+      - DEVICE_ID=SG1050KR01
       - RUST_LOG=info
       - MDNS_PORT=5404
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SG1050KR01"]
     deploy:
       resources:
         limits:
@@ -978,15 +1031,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node52_config.yaml:/app/config.yaml:ro
+      - ./identities/node52_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node52:/app/logs
-      - ./logs/node52/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node52
+      - DEVICE_ID=SC1051KR02
       - RUST_LOG=info
       - MDNS_PORT=5405
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SC1051KR02"]
     deploy:
       resources:
         limits:
@@ -997,15 +1051,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node53_config.yaml:/app/config.yaml:ro
+      - ./identities/node53_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node53:/app/logs
-      - ./logs/node53/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node53
+      - DEVICE_ID=SGC1052IN01
       - RUST_LOG=info
       - MDNS_PORT=5406
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SGC1052IN01"]
     deploy:
       resources:
         limits:
@@ -1016,15 +1071,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node54_config.yaml:/app/config.yaml:ro
+      - ./identities/node54_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node54:/app/logs
-      - ./logs/node54/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node54
+      - DEVICE_ID=SG1053IN02
       - RUST_LOG=info
       - MDNS_PORT=5407
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SG1053IN02"]
     deploy:
       resources:
         limits:
@@ -1035,15 +1091,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node55_config.yaml:/app/config.yaml:ro
+      - ./identities/node55_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node55:/app/logs
-      - ./logs/node55/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node55
+      - DEVICE_ID=SC1054IN03
       - RUST_LOG=info
       - MDNS_PORT=5408
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SC1054IN03"]
     deploy:
       resources:
         limits:
@@ -1054,15 +1111,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node56_config.yaml:/app/config.yaml:ro
+      - ./identities/node56_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node56:/app/logs
-      - ./logs/node56/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node56
+      - DEVICE_ID=SGC1055SG01
       - RUST_LOG=info
       - MDNS_PORT=5409
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SGC1055SG01"]
     deploy:
       resources:
         limits:
@@ -1073,15 +1131,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node57_config.yaml:/app/config.yaml:ro
+      - ./identities/node57_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node57:/app/logs
-      - ./logs/node57/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node57
+      - DEVICE_ID=SG1056MY01
       - RUST_LOG=info
       - MDNS_PORT=5410
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SG1056MY01"]
     deploy:
       resources:
         limits:
@@ -1092,15 +1151,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node58_config.yaml:/app/config.yaml:ro
+      - ./identities/node58_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node58:/app/logs
-      - ./logs/node58/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node58
+      - DEVICE_ID=SC1057TH01
       - RUST_LOG=info
       - MDNS_PORT=5411
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SC1057TH01"]
     deploy:
       resources:
         limits:
@@ -1111,15 +1171,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node59_config.yaml:/app/config.yaml:ro
+      - ./identities/node59_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node59:/app/logs
-      - ./logs/node59/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node59
+      - DEVICE_ID=SGC1058AE01
       - RUST_LOG=info
       - MDNS_PORT=5412
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SGC1058AE01"]
     deploy:
       resources:
         limits:
@@ -1130,15 +1191,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node60_config.yaml:/app/config.yaml:ro
+      - ./identities/node60_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node60:/app/logs
-      - ./logs/node60/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node60
+      - DEVICE_ID=SG1059SA01
       - RUST_LOG=info
       - MDNS_PORT=5413
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SG1059SA01"]
     deploy:
       resources:
         limits:
@@ -1149,15 +1211,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node61_config.yaml:/app/config.yaml:ro
+      - ./identities/node61_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node61:/app/logs
-      - ./logs/node61/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node61
+      - DEVICE_ID=SC1060IL01
       - RUST_LOG=info
       - MDNS_PORT=5414
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SC1060IL01"]
     deploy:
       resources:
         limits:
@@ -1168,15 +1231,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node62_config.yaml:/app/config.yaml:ro
+      - ./identities/node62_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node62:/app/logs
-      - ./logs/node62/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node62
+      - DEVICE_ID=SGC1061AU01
       - RUST_LOG=info
       - MDNS_PORT=5415
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SGC1061AU01"]
     deploy:
       resources:
         limits:
@@ -1187,15 +1251,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node63_config.yaml:/app/config.yaml:ro
+      - ./identities/node63_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node63:/app/logs
-      - ./logs/node63/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node63
+      - DEVICE_ID=SG1062AU02
       - RUST_LOG=info
       - MDNS_PORT=5416
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SG1062AU02"]
     deploy:
       resources:
         limits:
@@ -1206,15 +1271,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node64_config.yaml:/app/config.yaml:ro
+      - ./identities/node64_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node64:/app/logs
-      - ./logs/node64/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node64
+      - DEVICE_ID=SC1063AU03
       - RUST_LOG=info
       - MDNS_PORT=5417
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SC1063AU03"]
     deploy:
       resources:
         limits:
@@ -1225,15 +1291,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node65_config.yaml:/app/config.yaml:ro
+      - ./identities/node65_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node65:/app/logs
-      - ./logs/node65/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node65
+      - DEVICE_ID=SGC1064AU04
       - RUST_LOG=info
       - MDNS_PORT=5418
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SGC1064AU04"]
     deploy:
       resources:
         limits:
@@ -1244,15 +1311,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node66_config.yaml:/app/config.yaml:ro
+      - ./identities/node66_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node66:/app/logs
-      - ./logs/node66/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node66
+      - DEVICE_ID=SG1065NZ01
       - RUST_LOG=info
       - MDNS_PORT=5419
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SG1065NZ01"]
     deploy:
       resources:
         limits:
@@ -1263,15 +1331,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node67_config.yaml:/app/config.yaml:ro
+      - ./identities/node67_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node67:/app/logs
-      - ./logs/node67/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node67
+      - DEVICE_ID=SC1066NZ02
       - RUST_LOG=info
       - MDNS_PORT=5420
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SC1066NZ02"]
     deploy:
       resources:
         limits:
@@ -1282,15 +1351,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node68_config.yaml:/app/config.yaml:ro
+      - ./identities/node68_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node68:/app/logs
-      - ./logs/node68/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node68
+      - DEVICE_ID=SGC1067FJ01
       - RUST_LOG=info
       - MDNS_PORT=5421
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SGC1067FJ01"]
     deploy:
       resources:
         limits:
@@ -1301,15 +1371,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node69_config.yaml:/app/config.yaml:ro
+      - ./identities/node69_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node69:/app/logs
-      - ./logs/node69/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node69
+      - DEVICE_ID=SG1068PG01
       - RUST_LOG=info
       - MDNS_PORT=5422
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SG1068PG01"]
     deploy:
       resources:
         limits:
@@ -1320,15 +1391,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node70_config.yaml:/app/config.yaml:ro
+      - ./identities/node70_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node70:/app/logs
-      - ./logs/node70/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node70
+      - DEVICE_ID=SC1069NC01
       - RUST_LOG=info
       - MDNS_PORT=5423
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SC1069NC01"]
     deploy:
       resources:
         limits:
@@ -1339,15 +1411,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node71_config.yaml:/app/config.yaml:ro
+      - ./identities/node71_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node71:/app/logs
-      - ./logs/node71/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node71
+      - DEVICE_ID=SGC1070SB01
       - RUST_LOG=info
       - MDNS_PORT=5424
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SGC1070SB01"]
     deploy:
       resources:
         limits:
@@ -1358,15 +1431,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node72_config.yaml:/app/config.yaml:ro
+      - ./identities/node72_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node72:/app/logs
-      - ./logs/node72/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node72
+      - DEVICE_ID=SG1071TZ01
       - RUST_LOG=info
       - MDNS_PORT=5425
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SG1071TZ01"]
     deploy:
       resources:
         limits:
@@ -1377,15 +1451,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node73_config.yaml:/app/config.yaml:ro
+      - ./identities/node73_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node73:/app/logs
-      - ./logs/node73/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node73
+      - DEVICE_ID=SC1072UG01
       - RUST_LOG=info
       - MDNS_PORT=5426
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SC1072UG01"]
     deploy:
       resources:
         limits:
@@ -1396,15 +1471,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node74_config.yaml:/app/config.yaml:ro
+      - ./identities/node74_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node74:/app/logs
-      - ./logs/node74/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node74
+      - DEVICE_ID=SGC1073RW01
       - RUST_LOG=info
       - MDNS_PORT=5427
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SGC1073RW01"]
     deploy:
       resources:
         limits:
@@ -1415,15 +1491,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node75_config.yaml:/app/config.yaml:ro
+      - ./identities/node75_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node75:/app/logs
-      - ./logs/node75/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node75
+      - DEVICE_ID=SG1074SN01
       - RUST_LOG=info
       - MDNS_PORT=5428
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SG1074SN01"]
     deploy:
       resources:
         limits:
@@ -1434,15 +1511,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node76_config.yaml:/app/config.yaml:ro
+      - ./identities/node76_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node76:/app/logs
-      - ./logs/node76/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node76
+      - DEVICE_ID=SC1075CI01
       - RUST_LOG=info
       - MDNS_PORT=5429
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SC1075CI01"]
     deploy:
       resources:
         limits:
@@ -1453,15 +1531,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node77_config.yaml:/app/config.yaml:ro
+      - ./identities/node77_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node77:/app/logs
-      - ./logs/node77/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node77
+      - DEVICE_ID=SGC1076US05
       - RUST_LOG=info
       - MDNS_PORT=5430
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SGC1076US05"]
     deploy:
       resources:
         limits:
@@ -1472,15 +1551,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node78_config.yaml:/app/config.yaml:ro
+      - ./identities/node78_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node78:/app/logs
-      - ./logs/node78/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node78
+      - DEVICE_ID=SG1077US06
       - RUST_LOG=info
       - MDNS_PORT=5431
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SG1077US06"]
     deploy:
       resources:
         limits:
@@ -1491,15 +1571,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node79_config.yaml:/app/config.yaml:ro
+      - ./identities/node79_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node79:/app/logs
-      - ./logs/node79/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node79
+      - DEVICE_ID=SC1078US07
       - RUST_LOG=info
       - MDNS_PORT=5432
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SC1078US07"]
     deploy:
       resources:
         limits:
@@ -1510,15 +1591,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node80_config.yaml:/app/config.yaml:ro
+      - ./identities/node80_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node80:/app/logs
-      - ./logs/node80/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node80
+      - DEVICE_ID=SGC1079CA04
       - RUST_LOG=info
       - MDNS_PORT=5433
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SGC1079CA04"]
     deploy:
       resources:
         limits:
@@ -1529,15 +1611,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node81_config.yaml:/app/config.yaml:ro
+      - ./identities/node81_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node81:/app/logs
-      - ./logs/node81/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node81
+      - DEVICE_ID=SG1080CA05
       - RUST_LOG=info
       - MDNS_PORT=5434
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SG1080CA05"]
     deploy:
       resources:
         limits:
@@ -1548,15 +1631,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node82_config.yaml:/app/config.yaml:ro
+      - ./identities/node82_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node82:/app/logs
-      - ./logs/node82/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node82
+      - DEVICE_ID=SC1081SE01
       - RUST_LOG=info
       - MDNS_PORT=5435
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SC1081SE01"]
     deploy:
       resources:
         limits:
@@ -1567,15 +1651,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node83_config.yaml:/app/config.yaml:ro
+      - ./identities/node83_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node83:/app/logs
-      - ./logs/node83/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node83
+      - DEVICE_ID=SGC1082NO01
       - RUST_LOG=info
       - MDNS_PORT=5436
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SGC1082NO01"]
     deploy:
       resources:
         limits:
@@ -1586,15 +1671,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node84_config.yaml:/app/config.yaml:ro
+      - ./identities/node84_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node84:/app/logs
-      - ./logs/node84/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node84
+      - DEVICE_ID=SG1083FI01
       - RUST_LOG=info
       - MDNS_PORT=5437
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SG1083FI01"]
     deploy:
       resources:
         limits:
@@ -1605,15 +1691,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node85_config.yaml:/app/config.yaml:ro
+      - ./identities/node85_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node85:/app/logs
-      - ./logs/node85/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node85
+      - DEVICE_ID=SC1084DK01
       - RUST_LOG=info
       - MDNS_PORT=5438
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SC1084DK01"]
     deploy:
       resources:
         limits:
@@ -1624,15 +1711,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node86_config.yaml:/app/config.yaml:ro
+      - ./identities/node86_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node86:/app/logs
-      - ./logs/node86/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node86
+      - DEVICE_ID=SGC1085CH01
       - RUST_LOG=info
       - MDNS_PORT=5439
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SGC1085CH01"]
     deploy:
       resources:
         limits:
@@ -1643,15 +1731,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node87_config.yaml:/app/config.yaml:ro
+      - ./identities/node87_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node87:/app/logs
-      - ./logs/node87/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node87
+      - DEVICE_ID=SG1086ID01
       - RUST_LOG=info
       - MDNS_PORT=5440
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SG1086ID01"]
     deploy:
       resources:
         limits:
@@ -1662,15 +1751,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node88_config.yaml:/app/config.yaml:ro
+      - ./identities/node88_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node88:/app/logs
-      - ./logs/node88/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node88
+      - DEVICE_ID=SC1087PH01
       - RUST_LOG=info
       - MDNS_PORT=5441
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SC1087PH01"]
     deploy:
       resources:
         limits:
@@ -1681,15 +1771,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node89_config.yaml:/app/config.yaml:ro
+      - ./identities/node89_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node89:/app/logs
-      - ./logs/node89/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node89
+      - DEVICE_ID=SGC1088VN01
       - RUST_LOG=info
       - MDNS_PORT=5442
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SGC1088VN01"]
     deploy:
       resources:
         limits:
@@ -1700,15 +1791,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node90_config.yaml:/app/config.yaml:ro
+      - ./identities/node90_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node90:/app/logs
-      - ./logs/node90/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node90
+      - DEVICE_ID=SG1089BD01
       - RUST_LOG=info
       - MDNS_PORT=5443
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SG1089BD01"]
     deploy:
       resources:
         limits:
@@ -1719,15 +1811,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node91_config.yaml:/app/config.yaml:ro
+      - ./identities/node91_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node91:/app/logs
-      - ./logs/node91/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node91
+      - DEVICE_ID=SC1090PK01
       - RUST_LOG=info
       - MDNS_PORT=5444
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SC1090PK01"]
     deploy:
       resources:
         limits:
@@ -1738,15 +1831,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node92_config.yaml:/app/config.yaml:ro
+      - ./identities/node92_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node92:/app/logs
-      - ./logs/node92/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node92
+      - DEVICE_ID=SGC1091UY01
       - RUST_LOG=info
       - MDNS_PORT=5445
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SGC1091UY01"]
     deploy:
       resources:
         limits:
@@ -1757,15 +1851,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node93_config.yaml:/app/config.yaml:ro
+      - ./identities/node93_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node93:/app/logs
-      - ./logs/node93/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node93
+      - DEVICE_ID=SG1092PY01
       - RUST_LOG=info
       - MDNS_PORT=5446
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SG1092PY01"]
     deploy:
       resources:
         limits:
@@ -1776,15 +1871,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node94_config.yaml:/app/config.yaml:ro
+      - ./identities/node94_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node94:/app/logs
-      - ./logs/node94/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node94
+      - DEVICE_ID=SC1093BO01
       - RUST_LOG=info
       - MDNS_PORT=5447
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SC1093BO01"]
     deploy:
       resources:
         limits:
@@ -1795,15 +1891,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node95_config.yaml:/app/config.yaml:ro
+      - ./identities/node95_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node95:/app/logs
-      - ./logs/node95/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node95
+      - DEVICE_ID=SGC1094NZ03
       - RUST_LOG=info
       - MDNS_PORT=5448
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SGC1094NZ03"]
     deploy:
       resources:
         limits:
@@ -1814,15 +1911,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node96_config.yaml:/app/config.yaml:ro
+      - ./identities/node96_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node96:/app/logs
-      - ./logs/node96/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node96
+      - DEVICE_ID=SG1095FJ02
       - RUST_LOG=info
       - MDNS_PORT=5449
     network_mode: host
-    command: sh -c "sleep 7 && /app/p2p"
+    command: ["SG1095FJ02"]
     deploy:
       resources:
         limits:
@@ -1833,15 +1931,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node97_config.yaml:/app/config.yaml:ro
+      - ./identities/node97_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node97:/app/logs
-      - ./logs/node97/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node97
+      - DEVICE_ID=SC1096CM01
       - RUST_LOG=info
       - MDNS_PORT=5450
     network_mode: host
-    command: sh -c "sleep 9 && /app/p2p"
+    command: ["SC1096CM01"]
     deploy:
       resources:
         limits:
@@ -1852,15 +1951,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node98_config.yaml:/app/config.yaml:ro
+      - ./identities/node98_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node98:/app/logs
-      - ./logs/node98/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node98
+      - DEVICE_ID=SGC1097CD01
       - RUST_LOG=info
       - MDNS_PORT=5451
     network_mode: host
-    command: sh -c "sleep 11 && /app/p2p"
+    command: ["SGC1097CD01"]
     deploy:
       resources:
         limits:
@@ -1871,15 +1971,16 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node99_config.yaml:/app/config.yaml:ro
+      - ./identities/node99_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node99:/app/logs
-      - ./logs/node99/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node99
+      - DEVICE_ID=SG1098MZ01
       - RUST_LOG=info
       - MDNS_PORT=5452
     network_mode: host
-    command: sh -c "sleep 13 && /app/p2p"
+    command: ["SG1098MZ01"]
     deploy:
       resources:
         limits:
@@ -1890,15 +1991,36 @@ services:
     <<: *node-build
     image: p2p-node-image
     volumes:
-      - ./identities/node100_config.yaml:/app/config.yaml:ro
+      - ./identities/node100_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
       - ./logs/node100:/app/logs
-      - ./logs/node100/verification_log.txt:/app/verification_log.txt
     environment:
       - NODE_NAME=node100
+      - DEVICE_ID=SC1099DZ01
       - RUST_LOG=info
       - MDNS_PORT=5453
     network_mode: host
-    command: sh -c "sleep 5 && /app/p2p"
+    command: ["SC1099DZ01"]
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 500M
+
+  node101:
+    <<: *node-build
+    image: p2p-node-image
+    volumes:
+      - ./identities/node101_config.yaml:/app/config.yaml
+      - ./identities/devices.yaml:/app/devices.yaml
+      - ./logs/node101:/app/logs
+    environment:
+      - NODE_NAME=node101
+      - DEVICE_ID=SGC1100TN01
+      - RUST_LOG=info
+      - MDNS_PORT=5454
+    network_mode: host
+    command: ["SGC1100TN01"]
     deploy:
       resources:
         limits:

@@ -1,0 +1,10 @@
+node:
+  name: "node62"
+  port: 33396
+  device_id: "SGC1061AU01"
+  ic:
+    network: "local"
+    canister_id: "bkyz2-fmaaa-aaaaa-qaaaq-cai"
+    is_local: true
+    url: "http://127.0.0.1:4943"
+  peer_nodes: []

@@ -1,0 +1,10 @@
+node:
+  name: "node31"
+  port: 33365
+  device_id: "SC1030AR02"
+  ic:
+    network: "local"
+    canister_id: "bkyz2-fmaaa-aaaaa-qaaaq-cai"
+    is_local: true
+    url: "http://127.0.0.1:4943"
+  peer_nodes: []
