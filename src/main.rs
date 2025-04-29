@@ -619,7 +619,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let mut heartbeat_interval = interval(Duration::from_secs(60));
-    let mut signing_request_interval = interval(Duration::from_secs(3600)); // Changed from 10 seconds to 1 hour
+    let mut signing_request_interval = interval(Duration::from_secs(60)); // Changed from 10 seconds to 1 hour
     let mut retry_publish_interval = interval(Duration::from_secs(30)); // Added retry interval
 
     let network_metrics: Arc<Mutex<NetworkMetrics>> = Arc::new(Mutex::new(NetworkMetrics::default()));
@@ -904,21 +904,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
                 // Create non-encrypted data for this device only
                 let plain_data = PowerData::new_plain(device_id, &config_devices);
-                let json_string = "";
+                let json_string = serde_json::to_string_pretty(&plain_data).unwrap_or_else(|e| {
+                    eprintln!("Error serializing data: {}", e);
+                    String::new()
+                });
         
-                // Convert to JSON and print
-                match serde_json::to_string_pretty(&plain_data) {
-                    Ok(json_string) => {
-                        println!("\n--- {} Data Reading ---", device_id);
-                        println!("{}", json_string);
-                        println!("-------------------\n");
-                    },
-                    Err(e) => println!("Error serializing data: {}", e),
-                }
+                // Print the generated data
+                println!("\n--- {} Data Reading ---", device_id);
+                println!("{}", json_string);
+                println!("-------------------\n");
                 
-                // Sleep for 20 seconds before the next reading
-                thread::sleep(std::time::Duration::from_secs(1000));
-                let message_content = format!("{}", json_string);
+                let message_content = json_string;
 
                 let mut hasher = Sha256::new();
                 hasher.update(message_content.as_bytes());
