@@ -2028,17 +2028,17 @@ services:
           memory: 500M
 
   # Add the Internet Computer canister service for node registry
-  ic-canister:
-    image: dfinity/ic-standalone:latest
-    ports:
-      - "4943:4943"
-    volumes:
-      - ic_state:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4943/api/v2/status"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+#   ic-canister:
+#     image: dfinity/ic-standalone:latest
+#     ports:
+#       - "4943:4943"
+#     volumes:
+#       - ic_state:/data
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:4943/api/v2/status"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 3
 
-volumes:
-  ic_state:
+# volumes:
+#   ic_state:
