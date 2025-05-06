@@ -3,45 +3,48 @@ use std::fs;
 use std::path::Path;
 use crate::gps::Location;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeviceConfig {
     pub id: String,
+    pub peer_id: Option<String>,
     pub name: String,
     pub device_type: String,
-    pub location: DeviceLocation,
+    pub contract_address: String,
+    pub rabbitmq: RabbitMQConfig,
+    pub location: Location,
     pub specifications: DeviceSpecifications,
-    pub sensors: Vec<SensorConfig>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub network: Option<NetworkConfig>,
+    pub sensors: SensorConfig,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DeviceLocation {
-    pub latitude: f64,
-    pub longitude: f64,
-    pub country: String,
-    pub region: String,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RabbitMQConfig {
+    pub exchange: String,
+    pub routing_key: String,
+    pub queue: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeviceSpecifications {
     pub max_wattage: u32,
     pub voltage_range: String,
     pub frequency_range: String,
     pub battery_capacity: String,
+    pub phase_type: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SensorConfig {
-    pub sensor_type: String,
-    pub count: u8,
+    pub temperature: SensorRange,
+    pub light: SensorRange,
+    pub current: SensorRange,
+    pub voltage: SensorRange,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NetworkConfig {
-    pub ip: String,
-    pub port: u16,
-    pub protocol: String,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SensorRange {
+    pub min: i32,
+    pub max: i32,
+    pub unit: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,10 +81,10 @@ pub struct DefaultLoggingConfig {
     pub retention: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub devices: Vec<DeviceConfig>,
-    pub defaults: DefaultConfig,
+    pub defaults: Vec<DeviceConfig>,
 }
 
 impl Config {
@@ -92,30 +95,30 @@ impl Config {
     }
 
     pub fn get_device(&self, device_id: &str) -> Option<&DeviceConfig> {
-        self.devices.iter().find(|d| d.id == device_id)
+        self.devices.iter().find(|d| d.id == device_id || d.peer_id.as_deref() == Some(device_id))
     }
 
-    pub fn get_device_location(&self, device_id: &str) -> Option<Location> {
-        self.get_device(device_id).map(|device| {
-            // Create the location
-            let mut location = Location::new(
-                device.location.latitude,
-                device.location.longitude,
-                0.0, // Default altitude
-                5.0, // Default accuracy
-                8,   // Default satellite count
-            );
-            
-            // Manually set the country information from the device configuration
-            // instead of trying to detect it, which only works for a few countries
-            location.country = Some(crate::gps::Country {
-                code: device.location.country.clone(),
-                name: get_country_name(&device.location.country),
-                region: device.location.region.clone(),
-            });
-            
-            location
-        })
+    pub fn get_device_by_peer_id(&self, peer_id: &str) -> Option<&DeviceConfig> {
+        self.devices.iter().find(|d| d.peer_id.as_deref() == Some(peer_id))
+    }
+
+    pub fn get_device_location(&self, device_id: &str) -> Option<&Location> {
+        self.get_device(device_id).map(|d| &d.location)
+    }
+
+    pub fn update_device_peer_id(&mut self, device_id: &str, peer_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(device) = self.devices.iter_mut().find(|d| d.id == device_id) {
+            device.peer_id = Some(peer_id.to_string());
+            Ok(())
+        } else {
+            Err("Device not found".into())
+        }
+    }
+
+    pub fn save(&self, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        let content = serde_yaml::to_string(&self)?;
+        fs::write(path, content)?;
+        Ok(())
     }
 }
 

@@ -3,43 +3,52 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use chrono::Utc;
 use std::time::{SystemTime, UNIX_EPOCH};
+use anyhow::Result;
+use deadpool_postgres::{Config, Manager, Pool, Runtime};
+use tokio_postgres::NoTls;
+use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PowerData {
-    pub timestamp: u64,
+pub struct Message {
+    pub message_hash: String,
+    pub content: String,
+    pub originator_id: String,
+    pub timestamp: i64,
+    pub signers: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VerifiedData {
+    pub message_hash: String,
+    pub device_id: String,
+    pub device_name: String,
+    pub device_type: String,
+    pub contract_address: String,
+    pub max_wattage: i32,
+    pub voltage_range: String,
+    pub frequency_range: String,
+    pub battery_capacity: String,
+    pub phase_type: String,
+    pub timestamp: i64,
     pub sensor_readings: SensorReadings,
     pub power_readings: PowerReadings,
-    pub device_id: String,
     pub location: Location,
+    pub verification_count: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SensorReadings {
-    pub temperature1: f64,
-    pub temperature2: f64,
-    pub ldr_value: i32,
-    pub ldr_voltage: f64,
-    pub ldr_intensity: String,
-    pub current_ma: Vec<f64>,
-    pub voltage_mv: Vec<f64>,
+    pub temperature: f64,
+    pub light: i32,
+    pub current: i32,
+    pub voltage: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PowerReadings {
-    pub power_produced: f64,
-    pub battery_storage: f64,
-    pub power_consumed: f64,
-    pub device_consumption: f64,
-    pub power_produced_kwh: f64,
-    pub battery_storage_kwh: f64,
-    pub power_consumed_kwh: f64,
-    pub device_consumption_kwh: f64,
-    pub ac_voltage: f64,
-    pub ac_current: f64,
-    pub ac_power: f64,
-    pub ac_energy: f64,
-    pub ac_frequency: f64,
-    pub ac_power_factor: f64,
+    pub generated: f64,
+    pub consumed: f64,
+    pub battery_level: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,9 +56,6 @@ pub struct Location {
     pub latitude: f64,
     pub longitude: f64,
     pub altitude: f64,
-    pub timestamp: u64,
-    pub accuracy: f64,
-    pub satellites: i32,
     pub country: Country,
 }
 
@@ -61,135 +67,256 @@ pub struct Country {
 }
 
 pub struct Database {
-    pool: PgPool,
+    pool: Pool,
 }
 
 impl Database {
-    pub async fn new(database_url: &str) -> Result<Self, Error> {
-        let pool = PgPoolOptions::new()
-            .max_connections(5)
-            .connect(database_url)
-            .await?;
+    pub async fn new() -> Result<Self> {
+        let mut cfg = Config::new();
+        cfg.host = Some(env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string()));
+        cfg.port = Some(env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".to_string()).parse()?);
+        cfg.dbname = Some(env::var("POSTGRES_DB").unwrap_or_else(|_| "power_logger".to_string()));
+        cfg.user = Some(env::var("POSTGRES_USER").unwrap_or_else(|_| "power_logger_user".to_string()));
+        cfg.password = Some(env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "".to_string()));
 
-        Ok(Database { pool })
+        let mgr = Manager::new(cfg, NoTls);
+        let pool = Pool::new(mgr, Runtime::Tokio1)?;
+
+        Ok(Self { pool })
     }
 
-    pub async fn store_verified_data(&self, data: &PowerData, verified_by: Vec<String>) -> Result<(), Error> {
-        let mut transaction = self.pool.begin().await?;
+    pub async fn store_message(&self, message: &Message) -> Result<()> {
+        let client = self.pool.get().await?;
+        
+        // Start a transaction
+        let transaction = client.transaction().await?;
 
-        // Insert device if not exists
-        sqlx::query!(
-            r#"
-            INSERT INTO devices (device_id, name)
-            VALUES ($1, $2)
-            ON CONFLICT (device_id) DO NOTHING
-            "#,
-            data.device_id,
-            data.device_id // Using device_id as name for now
-        )
-        .execute(&mut transaction)
-        .await?;
+        // Insert the message
+        transaction.execute(
+            "INSERT INTO messages (message_hash, content, originator_id, timestamp)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (message_hash) DO NOTHING",
+            &[
+                &message.message_hash,
+                &message.content,
+                &message.originator_id,
+                &message.timestamp,
+            ],
+        ).await?;
 
-        // Insert location
-        let location_id = sqlx::query!(
-            r#"
-            INSERT INTO locations (
-                device_id, latitude, longitude, altitude, accuracy,
-                satellites, country_code, country_name, region, timestamp
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id
-            "#,
-            data.device_id,
-            data.location.latitude,
-            data.location.longitude,
-            data.location.altitude,
-            data.location.accuracy,
-            data.location.satellites,
-            data.location.country.code,
-            data.location.country.name,
-            data.location.country.region,
-            data.location.timestamp as i64
-        )
-        .fetch_one(&mut transaction)
-        .await?
-        .id;
+        // Insert all signers
+        for signer_id in &message.signers {
+            transaction.execute(
+                "INSERT INTO message_signers (message_hash, signer_id)
+                 VALUES ($1, $2)
+                 ON CONFLICT (message_hash, signer_id) DO NOTHING",
+                &[&message.message_hash, signer_id],
+            ).await?;
+        }
 
-        // Insert sensor readings
-        let sensor_id = sqlx::query!(
-            r#"
-            INSERT INTO sensor_readings (
-                device_id, timestamp, temperature1, temperature2,
-                ldr_value, ldr_voltage, ldr_intensity, current_ma, voltage_mv
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id
-            "#,
-            data.device_id,
-            data.timestamp as i64,
-            data.sensor_readings.temperature1,
-            data.sensor_readings.temperature2,
-            data.sensor_readings.ldr_value,
-            data.sensor_readings.ldr_voltage,
-            data.sensor_readings.ldr_intensity,
-            &data.sensor_readings.current_ma,
-            &data.sensor_readings.voltage_mv
-        )
-        .fetch_one(&mut transaction)
-        .await?
-        .id;
-
-        // Insert power readings
-        let power_id = sqlx::query!(
-            r#"
-            INSERT INTO power_readings (
-                device_id, timestamp, power_produced, battery_storage,
-                power_consumed, device_consumption, power_produced_kwh,
-                battery_storage_kwh, power_consumed_kwh, device_consumption_kwh,
-                ac_voltage, ac_current, ac_power, ac_energy, ac_frequency, ac_power_factor
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-            RETURNING id
-            "#,
-            data.device_id,
-            data.timestamp as i64,
-            data.power_readings.power_produced,
-            data.power_readings.battery_storage,
-            data.power_readings.power_consumed,
-            data.power_readings.device_consumption,
-            data.power_readings.power_produced_kwh,
-            data.power_readings.battery_storage_kwh,
-            data.power_readings.power_consumed_kwh,
-            data.power_readings.device_consumption_kwh,
-            data.power_readings.ac_voltage,
-            data.power_readings.ac_current,
-            data.power_readings.ac_power,
-            data.power_readings.ac_energy,
-            data.power_readings.ac_frequency,
-            data.power_readings.ac_power_factor
-        )
-        .fetch_one(&mut transaction)
-        .await?
-        .id;
-
-        // Insert verification record
-        sqlx::query!(
-            r#"
-            INSERT INTO verifications (
-                message_hash, device_id, timestamp, verified_by, verification_count
-            )
-            VALUES ($1, $2, $3, $4, $5)
-            "#,
-            Uuid::new_v4().to_string(), // Using UUID as message hash for now
-            data.device_id,
-            data.timestamp as i64,
-            &verified_by,
-            verified_by.len() as i32
-        )
-        .execute(&mut transaction)
-        .await?;
-
+        // Commit the transaction
         transaction.commit().await?;
+
         Ok(())
     }
+
+    pub async fn add_signer(&self, message_hash: &str, signer_id: &str) -> Result<()> {
+        let client = self.pool.get().await?;
+        
+        client.execute(
+            "INSERT INTO message_signers (message_hash, signer_id)
+             VALUES ($1, $2)
+             ON CONFLICT (message_hash, signer_id) DO NOTHING",
+            &[&message_hash, &signer_id],
+        ).await?;
+
+        Ok(())
+    }
+
+    pub async fn get_message_signers(&self, message_hash: &str) -> Result<Vec<String>> {
+        let client = self.pool.get().await?;
+        
+        let rows = client.query(
+            "SELECT signer_id FROM message_signers WHERE message_hash = $1",
+            &[&message_hash],
+        ).await?;
+
+        let signers = rows.iter()
+            .map(|row| row.get::<_, String>("signer_id"))
+            .collect();
+
+        Ok(signers)
+    }
+
+    pub async fn save_verified_data(&self, data: &VerifiedData) -> Result<()> {
+        let client = self.pool.get().await?;
+        
+        // Start a transaction
+        let transaction = client.transaction().await?;
+
+        // First, ensure device exists
+        transaction.execute(
+            "INSERT INTO devices (id, name, device_type, contract_address, max_wattage, voltage_range, frequency_range, battery_capacity, phase_type)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             ON CONFLICT (id) DO UPDATE SET
+             name = EXCLUDED.name,
+             device_type = EXCLUDED.device_type,
+             contract_address = EXCLUDED.contract_address,
+             max_wattage = EXCLUDED.max_wattage,
+             voltage_range = EXCLUDED.voltage_range,
+             frequency_range = EXCLUDED.frequency_range,
+             battery_capacity = EXCLUDED.battery_capacity,
+             phase_type = EXCLUDED.phase_type",
+            &[
+                &data.device_id,
+                &data.device_name,
+                &data.device_type,
+                &data.contract_address,
+                &data.max_wattage,
+                &data.voltage_range,
+                &data.frequency_range,
+                &data.battery_capacity,
+                &data.phase_type,
+            ],
+        ).await?;
+
+        // Then, ensure location exists
+        transaction.execute(
+            "INSERT INTO locations (device_id, latitude, longitude, altitude, country_code, country_name, region)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (device_id) DO UPDATE SET
+             latitude = EXCLUDED.latitude,
+             longitude = EXCLUDED.longitude,
+             altitude = EXCLUDED.altitude,
+             country_code = EXCLUDED.country_code,
+             country_name = EXCLUDED.country_name,
+             region = EXCLUDED.region",
+            &[
+                &data.device_id,
+                &data.location.latitude,
+                &data.location.longitude,
+                &data.location.altitude,
+                &data.location.country.code,
+                &data.location.country.name,
+                &data.location.country.region,
+            ],
+        ).await?;
+
+        // Finally, insert the verified data
+        transaction.execute(
+            "INSERT INTO verified_data (
+                message_hash, device_id, timestamp, temperature, light, current, voltage,
+                power_generated, power_consumed, battery_level, verification_count
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+            &[
+                &data.message_hash,
+                &data.device_id,
+                &data.timestamp,
+                &data.sensor_readings.temperature,
+                &data.sensor_readings.light,
+                &data.sensor_readings.current,
+                &data.sensor_readings.voltage,
+                &data.power_readings.generated,
+                &data.power_readings.consumed,
+                &data.power_readings.battery_level,
+                &data.verification_count,
+            ],
+        ).await?;
+
+        // Commit the transaction
+        transaction.commit().await?;
+
+        Ok(())
+    }
+
+    pub async fn get_device_stats(&self, device_id: &str, start_time: i64, end_time: i64) -> Result<DeviceStats> {
+        let client = self.pool.get().await?;
+        
+        let row = client.query_one(
+            "SELECT 
+                AVG(power_generated) as avg_generated,
+                MAX(power_generated) as max_generated,
+                MIN(power_generated) as min_generated,
+                SUM(power_generated) as total_generated,
+                AVG(power_consumed) as avg_consumed,
+                MAX(power_consumed) as max_consumed,
+                MIN(power_consumed) as min_consumed,
+                SUM(power_consumed) as total_consumed,
+                AVG(battery_level) as avg_battery,
+                COUNT(DISTINCT ms.signer_id) as avg_signers
+             FROM verified_data vd
+             JOIN messages m ON vd.message_hash = m.message_hash
+             JOIN message_signers ms ON m.message_hash = ms.message_hash
+             WHERE vd.device_id = $1 AND vd.timestamp BETWEEN $2 AND $3
+             GROUP BY vd.device_id",
+            &[&device_id, &start_time, &end_time],
+        ).await?;
+
+        Ok(DeviceStats {
+            avg_generated: row.get("avg_generated"),
+            max_generated: row.get("max_generated"),
+            min_generated: row.get("min_generated"),
+            total_generated: row.get("total_generated"),
+            avg_consumed: row.get("avg_consumed"),
+            max_consumed: row.get("max_consumed"),
+            min_consumed: row.get("min_consumed"),
+            total_consumed: row.get("total_consumed"),
+            avg_battery: row.get("avg_battery"),
+            avg_signers: row.get("avg_signers"),
+        })
+    }
+
+    pub async fn get_region_stats(&self, region: &str, start_time: i64, end_time: i64) -> Result<RegionStats> {
+        let client = self.pool.get().await?;
+        
+        let row = client.query_one(
+            "SELECT 
+                COUNT(DISTINCT vd.device_id) as device_count,
+                AVG(vd.power_generated) as avg_generated,
+                SUM(vd.power_generated) as total_generated,
+                AVG(vd.power_consumed) as avg_consumed,
+                SUM(vd.power_consumed) as total_consumed,
+                COUNT(DISTINCT ms.signer_id) as total_signers
+             FROM verified_data vd
+             JOIN locations l ON vd.device_id = l.device_id
+             JOIN messages m ON vd.message_hash = m.message_hash
+             JOIN message_signers ms ON m.message_hash = ms.message_hash
+             WHERE l.region = $1 AND vd.timestamp BETWEEN $2 AND $3
+             GROUP BY l.region",
+            &[&region, &start_time, &end_time],
+        ).await?;
+
+        Ok(RegionStats {
+            device_count: row.get("device_count"),
+            avg_generated: row.get("avg_generated"),
+            total_generated: row.get("total_generated"),
+            avg_consumed: row.get("avg_consumed"),
+            total_consumed: row.get("total_consumed"),
+            total_signers: row.get("total_signers"),
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct DeviceStats {
+    pub avg_generated: f64,
+    pub max_generated: f64,
+    pub min_generated: f64,
+    pub total_generated: f64,
+    pub avg_consumed: f64,
+    pub max_consumed: f64,
+    pub min_consumed: f64,
+    pub total_consumed: f64,
+    pub avg_battery: f64,
+    pub avg_signers: i64,
+}
+
+#[derive(Debug)]
+pub struct RegionStats {
+    pub device_count: i64,
+    pub avg_generated: f64,
+    pub total_generated: f64,
+    pub avg_consumed: f64,
+    pub total_consumed: f64,
+    pub total_signers: i64,
 } 

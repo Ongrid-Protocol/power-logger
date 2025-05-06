@@ -1,0 +1,59 @@
+--- main.rs.orig
++++ main.rs
+@@ -21,6 +21,11 @@
+ use power_logger::messaging::{RabbitMQClient, VerifiedData};
+ use anyhow::Result;
+ 
++// Add our new module
++mod devices_yaml;
++
++// Define the minimum number of nodes required for verification
++const MIN_NODES_FOR_VERIFICATION: usize = 5;
+ 
+ // Define the structure for signed messages
+ #[derive(Debug, Serialize, Deserialize, Clone)]
+@@ -504,7 +510,17 @@
+                     println!("Successfully registered node with canister using OTP");
+                     println!("Assigned Principal ID: {}", response.principal);
+                     if let Err(e) = save_principal_id(&response.principal) {
+-                        println!("Failed to save principal ID: {}", e);
++                        println!("Warning: Failed to save principal ID: {}", e);
++                    }
++                    
++                    // After successful OTP registration:
++                    match devices_yaml::fetch_devices_yaml(&agent, &canister_id).await {
++                        Ok(yaml_content) => {
++                            if !yaml_content.is_empty() {
++                                // Save to devices.yaml file locally
++                                std::fs::write("devices.yaml", yaml_content).ok();
++                            }
++                        },
++                        Err(_) => {}
+                     }
+                     save_private_key(&id_keys)?;
+                 } else {
+@@ -524,6 +540,8 @@
+                 Ok(response) => {
+                     if response.success {
+                         println!("Successfully registered node with canister");
++                        // Fetch updated devices.yaml from canister and save it
++                        devices_yaml::fetch_and_save_devices_yaml(&agent, &canister_id).await;
+                         println!("Assigned Principal ID: {}", response.principal);
+                         if let Err(e) = save_principal_id(&response.principal) {
+                             println!("Failed to save principal ID: {}", e);
+@@ -560,6 +578,15 @@
+ 
+                 let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+                 let plain_data = PowerData::new_plain(device_id, &config_devices);
++                
++                // Check if we have enough nodes for verification
++                let should_verify = devices_yaml::should_start_verification(&agent, &canister_id, MIN_NODES_FOR_VERIFICATION).await;
++                if !should_verify {
++                    println!("Skipping message signing and verification due to insufficient node count.");
++                    // Wait for the next interval and try again
++                    continue;
++                }
++                
+                 let json_string = serde_json::to_string_pretty(&plain_data).unwrap_or_else(|e| {
+                     eprintln!("Error serializing data: {}", e);
+                     String::new()

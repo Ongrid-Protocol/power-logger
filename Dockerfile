@@ -29,13 +29,14 @@ COPY --chown=rust:rust Cargo.toml Cargo.lock ./
 # Create dummy src and src/bin for dependency caching
 RUN mkdir -p src/bin && \
     echo 'fn main() { println!("dummy"); }' > src/main.rs && \
-    echo 'fn main() { println!("dummy bin"); }' > src/bin/dummy.rs
+    echo 'fn main() { println!("dummy bin"); }' > src/bin/dummy.rs && \
+    echo 'fn main() { println!("dummy update"); }' > src/bin/update_peer_id.rs
 
 # First build for dependency caching
 RUN cargo build --release || (echo "Initial build failed, continuing with source build..." && true)
 
 # Clean up dummy build
-RUN rm -f target/release/deps/power-logger*
+RUN rm -f target/release/deps/power-logger* target/release/deps/update_peer_id*
 
 # Copy the source files
 COPY --chown=rust:rust src ./src/
@@ -74,11 +75,10 @@ COPY --chown=root:root <<EOF /etc/logrotate.d/power-logger
 }
 EOF
 
-# Copy built binary and config
+# Copy built binaries
 COPY --from=builder /app/target/release/power-logger .
+COPY --from=builder /app/target/release/update_peer_id .
 COPY --from=builder /app/identities ./identities/
-
-RUN ls -la /app/power-logger && file /app/power-logger && ldd /app/power-logger
 
 # Set proper permissions
 RUN chown -R app:app /app && \
@@ -95,7 +95,6 @@ ENV RUST_LOG=debug
 
 # Verify setup
 RUN ls -la /app && \
-    ls -la /app/identities && \
     echo "NODE_NAME is: ${NODE_NAME}"
 
 # Set the entrypoint

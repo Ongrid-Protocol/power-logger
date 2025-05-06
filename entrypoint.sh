@@ -18,5 +18,12 @@ if [ -z "$DEVICE_ID" ]; then
     exit 1
 fi
 
+# Update peer ID in config
+echo "Updating peer ID for device ${DEVICE_ID}"
+./update_peer_id || {
+    echo "Failed to update peer ID"
+    exit 1
+}
+
 echo "Starting power-logger with device ID: ${DEVICE_ID}"
 exec ./power-logger "$DEVICE_ID"

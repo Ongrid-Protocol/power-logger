@@ -16,19 +16,30 @@ use chrono::Utc; // Add chrono for timestamps
 use std::time::Instant; // Import Instant for duration checking if needed later
 use rand::Rng;
 use std::fs;
-use power_logger::gps::Location;
+use power_logger::gps::{Location, Country};
 use power_logger::config::Config;
 use power_logger::sensors::SensorReadings;
 use power_logger::power::PowerReadings;
 use power_logger::crypto::{Crypto, EncryptedData, CryptoError};
+use power_logger::messaging::{RabbitMQClient, VerifiedData};
+use anyhow::Result;
+
+// Add our new module
+mod devices_yaml;
+
+// Define the minimum number of nodes required for verification
+const MIN_NODES_FOR_VERIFICATION: usize = 5;
 
 // Define the structure for signed messages
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct SignedMessage {
     content: String,
-    originator_id: String, // PeerId as string
-    message_hash: String, // SHA256 hash of content
-    signatures: HashSet<String>, // Set of PeerIds (as strings) that have signed
+    originator_id: String,
+    message_hash: String,
+    signatures: HashSet<String>,
+    sensor_readings: SensorReadings,
+    power_readings: PowerReadings,
+    location: Location,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,7 +49,6 @@ struct NodeConfig {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct NodeSettings {
-    name: String,
     port: u16,
     ic: ICSettings,
     peer_nodes: Vec<String>,
@@ -54,8 +64,7 @@ struct ICSettings {
 
 #[derive(CandidType, CandidDeserialize, Debug)]
 struct Node {
-    name: String,
-    principal: Principal,
+    node_principal: Principal,
     multiaddress: String,
     last_heartbeat: u64,
 }
@@ -63,7 +72,7 @@ struct Node {
 #[derive(CandidType, CandidDeserialize, Debug)]
 struct RegisterResponse {
     success: bool,
-    principal: Principal,
+    node_principal: Principal,
 }
 
 #[derive(NetworkBehaviour)]
@@ -121,13 +130,14 @@ async fn write_log(log_file: &LogFile, message: String) {
     // writer.flush().ok();
 }
 
-async fn register_node(agent: &Agent, canister_id: &Principal, node_principal: Principal, name: &str, multiaddr: &str) -> Result<RegisterResponse, Box<dyn Error>> {
+async fn register_node(agent: &Agent, canister_id: &Principal, node_principal: Principal, multiaddr: &str, otp: &str, peer_id: &str) -> Result<RegisterResponse, Box<dyn Error>> {
     let response = agent
         .update(canister_id, "register_node")
         .with_arg(candid::encode_args((
-            name,
             multiaddr,
             node_principal,
+            otp,
+            peer_id,
         ))?)
         .call_and_wait()
         .await?;
@@ -136,12 +146,11 @@ async fn register_node(agent: &Agent, canister_id: &Principal, node_principal: P
     Ok(result)
 }
 
-async fn send_heartbeat(agent: &Agent, canister_id: &Principal, node_principal: Principal, name: &str, multiaddr: &str) -> Result<bool, Box<dyn Error>> {
+async fn send_heartbeat(agent: &Agent, canister_id: &Principal, node_principal: Principal, multiaddr: &str) -> Result<bool, Box<dyn Error>> {
     let response = agent
         .update(canister_id, "heartbeat")
         .with_arg(candid::encode_args((
             node_principal,
-            name,
             multiaddr,
         ))?)
         .call_and_wait()
@@ -301,39 +310,6 @@ fn test_connectivity(target_ip: &str) -> bool {
 }
 
 impl PowerData {
-    // fn new(device_id: &str, config: &Config, crypto: &Crypto) -> Result<EncryptedData, CryptoError> {
-    //     let timestamp = SystemTime::now()
-    //         .duration_since(UNIX_EPOCH)
-    //         .unwrap()
-    //         .as_secs();
-
-    //     // Get device configuration
-    //     let device_config = config.get_device(device_id)
-    //         .expect(&format!("Device {} not found in configuration", device_id));
-        
-    //     // Get location from configuration
-    //     let location = config.get_device_location(device_id)
-    //         .expect(&format!("Location not found for device {}", device_id));
-
-    //     // Generate sensor readings first
-    //     let sensor_readings = SensorReadings::new(device_config);
-        
-    //     // Generate power readings based on sensor readings (especially light intensity)
-    //     let power_readings = PowerReadings::new_with_sensors(device_config, &sensor_readings);
-
-    //     // Create the data structure
-    //     let data = Self {
-    //         timestamp,
-    //         sensor_readings,
-    //         power_readings,
-    //         device_id: device_id.to_string(),
-    //         location,
-    //     };
-
-    //     // Encrypt the data
-    //     crypto.encrypt(&data)
-    // }
-
     fn new_plain(device_id: &str, config: &Config) -> Self {
         let (config, config_devices) = load_config().expect("Failed to load config");
         
@@ -342,11 +318,47 @@ impl PowerData {
             .expect("Time went backwards")
             .as_secs();
     
-        let device_config = config_devices.get_device(device_id)
-            .expect(&format!("Device {} not found in configuration", device_id));
+        // Use a safe approach to get device configuration or create default values
+        let device_config = match config_devices.get_device(device_id) {
+            Some(config) => config,
+            None => {
+                println!("Warning: Device {} not found in configuration, using defaults", device_id);
+                &config_devices.devices[0] // Use first device as fallback
+            }
+        };
         
-        let location = config_devices.get_device_location(device_id)
-            .expect(&format!("Location not found for device {}", device_id));
+        // Similarly for location
+        let location_info = match config_devices.get_device_location(device_id) {
+            Some(loc) => loc,
+            None => {
+                println!("Warning: Location not found for device {}, using defaults", device_id);
+                // Create a default location (San Francisco)
+                &Location {
+                    latitude: 37.7749,
+                    longitude: -122.4194,
+                    altitude: 0.0,
+                    timestamp,
+                    accuracy: 5.0,
+                    satellites: 8,
+                    country: Some(Country {
+                        code: "US".to_string(),
+                        name: "United States".to_string(),
+                        region: "North America".to_string(),
+                    }),
+                }
+            }
+        };
+        
+        // Create a proper Location struct with all required fields
+        let location = Location {
+            latitude: location_info.latitude,
+            longitude: location_info.longitude,
+            altitude: location_info.altitude,
+            timestamp, // Use the same timestamp as the PowerData
+            accuracy: 5.0, // Default accuracy of 5 meters
+            satellites: 8, // Default number of satellites
+            country: location_info.country.clone(),
+        };
     
         let sensor_readings = SensorReadings::new(device_config);
         let power_readings = PowerReadings::new_with_sensors(device_config, &sensor_readings);
@@ -380,32 +392,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_env_filter(EnvFilter::from_default_env())
         .try_init();
 
-    // Check if we should clear the registry
-    if env::var("CLEAR_REGISTRY").is_ok() {
-        let ic_url = env::var("IC_URL").unwrap_or_else(|_| {
-            println!("Warning: IC_URL environment variable not set, using URL from config.yaml");
-            config.node.ic.url.clone()
-        });
-        println!("Using IC URL: {}", ic_url);
+    // // Check if we should clear the registry
+    // if env::var("CLEAR_REGISTRY").is_ok() {
+    //     let ic_url = env::var("IC_URL").unwrap_or_else(|_| {
+    //         println!("Warning: IC_URL environment variable not set, using URL from config.yaml");
+    //         config.node.ic.url.clone()
+    //     });
+    //     println!("Using IC URL: {}", ic_url);
 
-        let agent = Agent::builder()
-            .with_url(&ic_url)
-            .build()?;
+    //     let agent = Agent::builder()
+    //         .with_url(&ic_url)
+    //         .build()?;
 
-        if config.node.ic.is_local {
-            agent.fetch_root_key().await?;
-        }
+    //     let canister_id = Principal::from_text(&config.node.ic.canister_id)?;
+    //     println!("Clearing registry for canister: {}", canister_id);
 
-        let canister_id = Principal::from_text(&config.node.ic.canister_id)?;
-        println!("Clearing registry for canister: {}", canister_id);
-
-        match clear_registry(&agent, &canister_id).await {
-            Ok(true) => println!("Registry cleared successfully"),
-            Ok(false) => println!("Failed to clear registry"),
-            Err(e) => println!("Error clearing registry: {}", e),
-        }
-        return Ok(());
-    }
+    //     match clear_registry(&agent, &canister_id).await {
+    //         Ok(true) => println!("Registry cleared successfully"),
+    //         Ok(false) => println!("Failed to clear registry"),
+    //         Err(e) => println!("Error clearing registry: {}", e),
+    //     }
+    //     return Ok(());
+    // }
 
     // --- Log File Setup ---
     let log_path = format!("verification_log.txt");
@@ -422,11 +430,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some(keys) => keys,
         None => {
             let id_keys = identity::Keypair::generate_ed25519();
-            save_private_key(&id_keys)?;
             id_keys
         }
     };
     let peer_id = PeerId::from(id_keys.public());
+    let peer_id_str = peer_id.to_string();
+
     println!("Peer ID: {}", peer_id);
     let public_key_bytes = id_keys.public().to_peer_id().to_base58();
 
@@ -461,25 +470,88 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let public_multiaddr = format!("/ip4/{}/tcp/{}/p2p/{}", public_ip, config.node.port, peer_id);
     println!("Using public multiaddress for registration/heartbeat: {}", public_multiaddr);
 
-    match register_node(
-        &agent,
-        &canister_id,
-        node_principal,
-        &config.node.name,
-        &public_multiaddr,
-    ).await {
-        Ok(response) => {
-            if response.success {
-                println!("Successfully registered node with canister");
-                println!("Assigned Principal ID: {}", response.principal);
-                if let Err(e) = save_principal_id(&response.principal) {
-                    println!("Failed to save principal ID: {}", e);
+    // Check if this is a new node (no private key file existed)
+    if !Path::new("node_private_key.bin").exists() {
+        println!("This appears to be a new node registration.");
+        println!("Please enter the OTP provided by the canister:");
+        let mut otp = String::new();
+        std::io::stdin().read_line(&mut otp)?;
+        let otp = otp.trim().to_string();
+        
+        println!("Registering with OTP: {}", otp);
+        
+        match register_node(
+            &agent,
+            &canister_id,
+            node_principal,
+            &public_multiaddr,
+            &otp,
+            &peer_id_str
+        ).await {
+            Ok(response) => {
+                if response.success {
+                    println!("Successfully registered node with canister using OTP");
+                    println!("Assigned Principal ID: {}", response.node_principal);
+                    if let Err(e) = save_principal_id(&response.node_principal) {
+                        println!("Failed to save principal ID: {}", e);
+                    }
+                    save_private_key(&id_keys)?;
+
+                    // After successful OTP registration:
+                    match devices_yaml::fetch_devices_yaml(&agent, &canister_id).await {
+                        Ok(yaml_content) => {
+                            if !yaml_content.is_empty() {
+                                // Save to devices.yaml file
+                                if let Err(e) = std::fs::write("devices.yaml", yaml_content) {
+                                    println!("Failed to write devices.yaml: {}", e);
+                                } else {
+                                    println!("Successfully updated devices.yaml from canister");
+                                }
+                            } else {
+                                println!("Warning: Received empty devices.yaml from canister");
+                            }
+                        },
+                        Err(e) => println!("Error fetching devices.yaml: {}", e),
+                    }
+                } else {
+                    println!("Failed to register node with canister. Invalid OTP?");
+                    return Err("Registration failed - invalid OTP".into());
                 }
-            } else {
-                println!("Failed to register node with canister");
+            }
+            Err(e) => {
+                println!("Error registering node: {}", e);
+                return Err(e);
             }
         }
-        Err(e) => println!("Error registering node: {}", e),
+    } else {
+        // Existing node - try to register without OTP
+        match register_node(
+            &agent,
+            &canister_id,
+            node_principal,
+            &public_multiaddr,
+            "", // Empty OTP for existing nodes
+            &peer_id_str
+        ).await {
+            Ok(response) => {
+                if response.success {
+                    println!("Successfully registered node with canister");
+                    println!("Assigned Principal ID: {}", response.node_principal);
+                    if let Err(e) = save_principal_id(&response.node_principal) {
+                        println!("Failed to save principal ID: {}", e);
+                    }
+
+                    // When a node reconnects:
+                    if response.success {
+                        // Fetch updated devices.yaml from canister and save it
+                        devices_yaml::fetch_and_save_devices_yaml(&agent, &canister_id).await;
+                    }
+                } else {
+                    println!("Failed to register node with canister");
+                }
+            }
+            Err(e) => println!("Error registering node: {}", e),
+        }
     }
 
     let fetched_nodes = fetch_peer_nodes(&agent, &config.node).await?;
@@ -619,7 +691,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let mut heartbeat_interval = interval(Duration::from_secs(60));
-    let mut signing_request_interval = interval(Duration::from_secs(60)); // Changed from 10 seconds to 1 hour
+    let mut signing_request_interval = interval(Duration::from_secs(60)); // Every 1 minute
     let mut retry_publish_interval = interval(Duration::from_secs(30)); // Added retry interval
 
     let network_metrics: Arc<Mutex<NetworkMetrics>> = Arc::new(Mutex::new(NetworkMetrics::default()));
@@ -656,14 +728,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // Verify the device exists in configuration
-    if config_devices.get_device(device_id).is_none() {
-        eprintln!("Error: Device ID '{}' not found in configuration", device_id);
-        eprintln!("Available devices:");
-        for device in &config_devices.devices {
-            eprintln!("  - {}: {}", device.id, device.name);
-        }
-        std::process::exit(1);
-    }
+    // if config_devices.get_device(device_id).is_none() {
+    //     eprintln!("Error: Device ID '{}' not found in configuration", device_id);
+    //     eprintln!("Available devices:");
+    //     for device in &config_devices.devices {
+    //         eprintln!("  - {}: {}", device.id, device.name);
+    //     }
+    //     std::process::exit(1);
+    // }
 
     loop {
         tokio::select! {
@@ -672,7 +744,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 match event {
                     SwarmEvent::NewListenAddr { address, .. } => {
                         println!("\nNode Information:");
-                        println!("Name: {}", config.node.name);
                         println!("PeerId: {}", local_peer_id);
                         println!("Listening on: {}", address);
                         println!("Public Multiaddr: {}", public_multiaddr);
@@ -772,7 +843,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             if current_sig_count >= 3 && initial_sig_count_before_update < 3 {
                                 let mut counter = verification_counter_clone.lock().unwrap();
                                 *counter += 1;
-                                println!("*** MESSAGE VERIFIED ({} signatures): Hash {} (Total Verified: {}) ***", current_sig_count, message_hash, *counter);
+                                println!("*** MESSAGE VERIFIED ({} signatures): Hash {} (Total Verified: {}) ***", 
+                                    current_sig_count, message_hash, *counter);
+
                                 // Log verification
                                 write_log(
                                     &log_file_inner_clone,
@@ -784,6 +857,42 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                         *counter
                                     )
                                 ).await;
+
+                                // Get device configuration
+                                println!("Looking up device ID: {}", entry.originator_id);
+                                let device_config = config_devices.get_device(&entry.originator_id)
+                                    .expect("Device configuration not found");
+
+                                // Create verified data structure
+                                let verified_data = VerifiedData {
+                                    device_id: entry.originator_id.clone(),
+                                    contract_address: device_config.contract_address.clone(),
+                                    timestamp: SystemTime::now()
+                                        .duration_since(UNIX_EPOCH)
+                                        .unwrap()
+                                        .as_secs(),
+                                    sensor_readings: entry.sensor_readings.clone(),
+                                    power_readings: entry.power_readings.clone(),
+                                    location: entry.location.clone(),
+                                    verified_by: entry.signatures.iter().cloned().collect(),
+                                    verification_count: current_sig_count as i32,
+                                };
+
+                                // Get RabbitMQ client
+                                if let Ok(rabbitmq_client) = RabbitMQClient::get_client().await {
+                                    // Publish verified data
+                                    if let Err(e) = rabbitmq_client.publish_verified_data(
+                                        verified_data,
+                                        &device_config.rabbitmq.exchange,
+                                        &device_config.rabbitmq.routing_key,
+                                    ).await {
+                                        eprintln!("Failed to publish verified data to RabbitMQ: {}", e);
+                                    } else {
+                                        println!("Successfully published verified data to RabbitMQ");
+                                    }
+                                } else {
+                                    eprintln!("Failed to get RabbitMQ client");
+                                }
 
                                 needs_republish = false; // Don't republish if just verified
                             } else if current_sig_count >= 3 {
@@ -879,7 +988,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     &agent,
                     &canister_id,
                     node_principal,
-                    &config.node.name,
                     &current_multiaddr,
                 ).await {
                     Ok(success) => {
@@ -897,6 +1005,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             }
             _ = signing_request_interval.tick() => {
+                // Check if we have enough nodes for verification
+                let should_verify = devices_yaml::should_start_verification(&agent, &canister_id, MIN_NODES_FOR_VERIFICATION).await;
+                if !should_verify {
+                    println!("Skipping message signing and verification due to insufficient node count.");
+                    // Wait for the next interval and try again
+                    continue;
+                }
 
                 println!("Current peer count: {}", swarm.connected_peers().count());
                 let log_file_inner_clone = log_file_clone.clone(); // Clone only if needed
@@ -930,6 +1045,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     originator_id: local_peer_id_str.clone(),
                     message_hash: message_hash_hex.clone(),
                     signatures: initial_signatures,
+                    sensor_readings: plain_data.sensor_readings,
+                    power_readings: plain_data.power_readings,
+                    location: plain_data.location,
                 };
 
                 let mut store = message_store_clone.lock().unwrap();
