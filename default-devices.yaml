@@ -22,4 +22,4 @@ devices:
       voltage_range: 220V-240V
       frequency_range: 50
       battery_capacity: 200
-      phase_type: single  
+      phase_type: single 

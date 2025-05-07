@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  debug:
+    image: power-logger-debug:latest
+    container_name: power-logger-debug
+    volumes:
+      - ./config.yaml:/app/config/config.yaml:ro
+      - ./devices.yaml:/app/devices.yaml:ro
+      - ./nodes/debug/data:/app/data
+      - ./nodes/debug/logs:/app/logs
+    environment:
+      - NODE_ID=debug
+      - NODE_NAME=DebugNode
+      - RUST_LOG=debug
+      - RUST_BACKTRACE=1
+    ports:
+      - "33399:33334" 

@@ -698,15 +698,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    // Set up intervals for various periodic tasks
+    // Heartbeat every 1 minute (60 seconds)
     let mut heartbeat_interval = interval(Duration::from_secs(60));
-    let mut signing_request_interval = interval(Duration::from_secs(60)); // Every 1 minute
-    let mut retry_publish_interval = interval(Duration::from_secs(30)); // Added retry interval
+    
+    // Message verification every 10 minutes (600 seconds)
+    let mut signing_request_interval = interval(Duration::from_secs(600)); 
+    
+    // Retry publishing failed messages every 30 seconds
+    let mut retry_publish_interval = interval(Duration::from_secs(30));
+    
+    // Network metrics logging every minute
+    let mut metrics_interval = interval(Duration::from_secs(60));
+    
+    // Network connection check every 10 seconds
+    let mut network_check_interval = interval(Duration::from_secs(10));
+    
+    // Connection retry interval every 15 seconds
+    let mut connection_retry_interval = interval(Duration::from_secs(15));
+    
+    // Pre-verification node connection interval (5 seconds before verification)
+    let mut pre_verification_connection_interval = interval(Duration::from_secs(595));
 
     let network_metrics: Arc<Mutex<NetworkMetrics>> = Arc::new(Mutex::new(NetworkMetrics::default()));
     let metrics_clone = network_metrics.clone();
-    
-    // Add metrics logging interval
-    let mut metrics_interval = interval(Duration::from_secs(60));
 
     println!("Node initialized. Waiting for peers and network events.");
 
@@ -716,11 +731,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let local_peer_id = peer_id;
     let _keypair_clone = id_keys; // Prefix with underscore
     let log_file_clone = log_file.clone(); // Clone Arc for the main loop
-    let mut network_check = interval(Duration::from_secs(10));
     let retry_list_clone = retry_list.clone(); // Clone the retry list
-    let mut connection_retry_interval = interval(Duration::from_secs(15)); // Add retry interval
-    // Load configuration
-
 
     // Initialize crypto with a secure key (still needed for API compatibility)
     let mut key = [0u8; 32];
@@ -735,19 +746,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "SG7392A15F" // Default to "Solar Generator North America 1"
     };
 
-    // Verify the device exists in configuration
-    // if config_devices.get_device(device_id).is_none() {
-    //     eprintln!("Error: Device ID '{}' not found in configuration", device_id);
-    //     eprintln!("Available devices:");
-    //     for device in &config_devices.devices {
-    //         eprintln!("  - {}: {}", device.id, device.name);
-    //     }
-    //     std::process::exit(1);
-    // }
-
     loop {
         tokio::select! {
-
             event = swarm.select_next_some() => {
                 match event {
                     SwarmEvent::NewListenAddr { address, .. } => {
@@ -988,7 +988,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     _ => {}
                 }
             }
+            
+            // Heartbeat every 1 minute
             _ = heartbeat_interval.tick() => {
+                println!("Sending heartbeat to canister...");
                 // Refresh public IP on each heartbeat
                 let current_ip = get_public_ip().await?;
                 let current_multiaddr = format!("/ip4/{}/tcp/{}/p2p/{}", current_ip, config.node.port, local_peer_id);
@@ -1000,7 +1003,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 ).await {
                     Ok(success) => {
                         if success {
-                           // println!("Heartbeat sent successfully"); // Reduce noise
+                            println!("Heartbeat sent successfully");
                         } else {
                             println!("Heartbeat failed, will retry in next interval");
                         }
@@ -1010,18 +1013,63 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 let mut metrics = metrics_clone.lock().unwrap();
                 metrics.last_heartbeat_time = Some(Instant::now());
-
             }
+            
+            // Try to connect to other nodes just before verification (5 seconds before)
+            _ = pre_verification_connection_interval.tick() => {
+                println!("Pre-verification node connection check...");
+                // Fetch the latest peers from the canister
+                match fetch_peer_nodes(&agent, &config.node).await {
+                    Ok(new_fetched_nodes) => {
+                        // Filter out our own node
+                        let new_active_nodes: Vec<String> = new_fetched_nodes
+                            .into_iter()
+                            .filter(|addr_str| {
+                                if let Ok(ma) = addr_str.parse::<Multiaddr>() {
+                                    if let Some(Protocol::P2p(fetched_peer_id)) = ma.iter().last() {
+                                        if fetched_peer_id != peer_id { 
+                                            return true;
+                                        }
+                                    }
+                                }
+                                false
+                            })
+                            .collect();
+                        
+                        println!("Pre-verification: Found {} active peers to connect to", new_active_nodes.len());
+                        
+                        // Try to connect to all peers
+                        for addr in &new_active_nodes {
+                            if let Ok(remote_addr) = addr.parse::<Multiaddr>() {
+                                if let Some(libp2p::multiaddr::Protocol::P2p(peer_id)) = remote_addr.iter().last() {
+                                    println!("Pre-verification: Attempting to dial: {} at {}", peer_id, remote_addr);
+                                    if let Err(e) = swarm.dial(remote_addr.clone()) {
+                                        println!("Pre-verification: Failed to dial {}: {}", addr, e);
+                                    } else {
+                                        println!("Pre-verification: Dial initiated to node: {}", addr);
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        println!("Failed to fetch peer nodes before verification: {}", e);
+                    }
+                }
+            }
+            
+            // Message verification every 10 minutes
             _ = signing_request_interval.tick() => {
+                println!("Starting message verification cycle...");
                 // Check if we have enough nodes for verification
                 let should_verify = devices_yaml::should_start_verification(&agent, &canister_id, MIN_NODES_FOR_VERIFICATION).await;
                 if !should_verify {
-                    println!("Skipping message signing and verification due to insufficient node count.");
+                    println!("Skipping message verification due to insufficient node count.");
                     // Wait for the next interval and try again
                     continue;
                 }
 
-                println!("Current peer count: {}", swarm.connected_peers().count());
+                println!("Current peer count for verification: {}", swarm.connected_peers().count());
                 let log_file_inner_clone = log_file_clone.clone(); // Clone only if needed
 
                 let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
@@ -1033,7 +1081,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 });
         
                 // Print the generated data
-                println!("\n--- {} Data Reading ---", device_id);
+                println!("\n--- {} Data Reading for Verification ---", device_id);
                 println!("{}", json_string);
                 println!("-------------------\n");
                 
@@ -1089,7 +1137,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     drop(store); // Release lock if message already exists
                 }
             }
-            _ = retry_publish_interval.tick() => { // Added retry logic arm
+            
+            // Handle retry publication
+            _ = retry_publish_interval.tick() => {
                 let mut queue = failed_publish_queue_clone.lock().unwrap();
                 if !queue.is_empty() {
                     println!("Retrying publication for {} queued messages.", queue.len());
@@ -1117,6 +1167,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     queue.extend(still_failed);
                 }
             }
+            
+            // Network metrics logging
             _ = metrics_interval.tick() => {
                 let metrics = metrics_clone.lock().unwrap();
                 let mesh_peers = swarm.behaviour().gossipsub.mesh_peers(&topic.hash()).count();
@@ -1141,10 +1193,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     (metrics.successful_connections as f64 / metrics.connection_attempts as f64) * 100.0);
                 println!("Average Connection Duration: {:?}", avg_connection_duration);
                 println!("Average Message Latency: {:?}", avg_message_latency);
-
                 println!("Last Heartbeat: {:?}", metrics.last_heartbeat_time);
                 println!("=====================\n");
             }
+            
+            // Connection retry handling
             _ = connection_retry_interval.tick() => {
                 let mut retry_list = retry_list_clone.lock().unwrap();
                 if !retry_list.is_empty() {
@@ -1213,7 +1266,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-
     }
 }
 

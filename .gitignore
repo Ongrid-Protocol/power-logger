@@ -85,4 +85,7 @@ Thumbs.db
 /device_configs/
 *.csv
 *.json
-*.dat 
+*.dat
+
+# Do not ignore default device config
+!default-devices.yaml 
