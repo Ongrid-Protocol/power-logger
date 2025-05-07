@@ -481,54 +481,62 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Check if this is a new node (no private key file existed)
     if !Path::new("node_private_key.bin").exists() {
         println!("This appears to be a new node registration.");
-        println!("Please enter the OTP provided by the canister:");
-        let mut otp = String::new();
-        std::io::stdin().read_line(&mut otp)?;
-        let otp = otp.trim().to_string();
+        let mut registration_success = false;
         
-        println!("Registering with OTP: {}", otp);
-        
-        match register_node(
-            &agent,
-            &canister_id,
-            node_principal,
-            &public_multiaddr,
-            &otp,
-            &peer_id_str
-        ).await {
-            Ok(response) => {
-                if response.success {
-                    println!("Successfully registered node with canister using OTP");
-                    println!("Assigned Principal ID: {}", response.node_principal);
-                    if let Err(e) = save_principal_id(&response.node_principal) {
-                        println!("Failed to save principal ID: {}", e);
-                    }
-                    save_private_key(&id_keys)?;
-
-                    // After successful OTP registration:
-                    match devices_yaml::fetch_devices_yaml(&agent, &canister_id).await {
-                        Ok(yaml_content) => {
-                            if !yaml_content.is_empty() {
-                                // Save to devices.yaml file
-                                if let Err(e) = std::fs::write("devices.yaml", yaml_content) {
-                                    println!("Failed to write devices.yaml: {}", e);
-                                } else {
-                                    println!("Successfully updated devices.yaml from canister");
-                                }
-                            } else {
-                                println!("Warning: Received empty devices.yaml from canister");
-                            }
-                        },
-                        Err(e) => println!("Error fetching devices.yaml: {}", e),
-                    }
-                } else {
-                    println!("Failed to register node with canister. Invalid OTP?");
-                    return Err("Registration failed - invalid OTP".into());
-                }
+        while !registration_success {
+            println!("Please enter the OTP provided by the canister (or 'exit' to quit):");
+            let mut otp = String::new();
+            std::io::stdin().read_line(&mut otp)?;
+            let otp = otp.trim().to_string();
+            
+            if otp.to_lowercase() == "exit" {
+                println!("Exiting node registration...");
+                return Ok(());
             }
-            Err(e) => {
-                println!("Error registering node: {}", e);
-                return Err(e);
+            
+            println!("Registering with OTP: {}", otp);
+            
+            match register_node(
+                &agent,
+                &canister_id,
+                node_principal,
+                &public_multiaddr,
+                &otp,
+                &peer_id_str
+            ).await {
+                Ok(response) => {
+                    if response.success {
+                        println!("Successfully registered node with canister using OTP");
+                        println!("Assigned Principal ID: {}", response.node_principal);
+                        if let Err(e) = save_principal_id(&response.node_principal) {
+                            println!("Failed to save principal ID: {}", e);
+                        }
+                        save_private_key(&id_keys)?;
+
+                        // After successful OTP registration:
+                        match devices_yaml::fetch_devices_yaml(&agent, &canister_id).await {
+                            Ok(yaml_content) => {
+                                if !yaml_content.is_empty() {
+                                    // Save to devices.yaml file
+                                    if let Err(e) = std::fs::write("devices.yaml", yaml_content) {
+                                        println!("Failed to write devices.yaml: {}", e);
+                                    } else {
+                                        println!("Successfully updated devices.yaml from canister");
+                                    }
+                                } else {
+                                    println!("Warning: Received empty devices.yaml from canister");
+                                }
+                            },
+                            Err(e) => println!("Error fetching devices.yaml: {}", e),
+                        }
+                        registration_success = true;
+                    } else {
+                        println!("Failed to register node with canister. Invalid OTP. Please try again.");
+                    }
+                }
+                Err(e) => {
+                    println!("Error registering node: {}. Please try again.", e);
+                }
             }
         }
     } else {

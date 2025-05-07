@@ -8,10 +8,12 @@ services:
       dockerfile: Dockerfile
     image: power-logger:latest
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./script:/app/script:ro
+    environment:
+      - IC_URL=http://localhost:4943
+    network_mode: host
     command: /bin/sh -c "echo 'Bootstrap image built successfully'"
 
   # Node 1
@@ -29,8 +31,8 @@ services:
       - NODE_ID=1
       - NODE_NAME=PowerNode1
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 
@@ -41,7 +43,6 @@ services:
     ports:
       - "33335:33334"
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node2/data:/app/data
@@ -50,8 +51,8 @@ services:
       - NODE_ID=2
       - NODE_NAME=PowerNode2
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 
@@ -62,7 +63,6 @@ services:
     ports:
       - "33336:33334"
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node3/data:/app/data
@@ -71,8 +71,8 @@ services:
       - NODE_ID=3
       - NODE_NAME=PowerNode3
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 
@@ -83,7 +83,6 @@ services:
     ports:
       - "33337:33334"
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node4/data:/app/data
@@ -92,8 +91,8 @@ services:
       - NODE_ID=4
       - NODE_NAME=PowerNode4
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 
@@ -104,7 +103,6 @@ services:
     ports:
       - "33338:33334"
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node5/data:/app/data
@@ -113,8 +111,8 @@ services:
       - NODE_ID=5
       - NODE_NAME=PowerNode5
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 
@@ -125,7 +123,6 @@ services:
     ports:
       - "33339:33334"
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node6/data:/app/data
@@ -134,8 +131,8 @@ services:
       - NODE_ID=6
       - NODE_NAME=PowerNode6
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 
@@ -146,7 +143,6 @@ services:
     ports:
       - "33340:33334"
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node7/data:/app/data
@@ -155,8 +151,8 @@ services:
       - NODE_ID=7
       - NODE_NAME=PowerNode7
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 
@@ -167,7 +163,6 @@ services:
     ports:
       - "33341:33334"
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node8/data:/app/data
@@ -176,8 +171,8 @@ services:
       - NODE_ID=8
       - NODE_NAME=PowerNode8
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 
@@ -188,7 +183,6 @@ services:
     ports:
       - "33342:33334"
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node9/data:/app/data
@@ -197,8 +191,8 @@ services:
       - NODE_ID=9
       - NODE_NAME=PowerNode9
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 
@@ -209,7 +203,6 @@ services:
     ports:
       - "33343:33334"
     volumes:
-      
       - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node10/data:/app/data
@@ -218,8 +211,8 @@ services:
       - NODE_ID=10
       - NODE_NAME=PowerNode10
       - RUST_LOG=info
-    networks:
-      - power-network
+      - IC_URL=http://localhost:4943
+    network_mode: host
     depends_on:
       - bootstrap
 

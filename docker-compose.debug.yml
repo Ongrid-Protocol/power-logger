@@ -5,7 +5,7 @@ services:
     image: power-logger-debug:latest
     container_name: power-logger-debug
     volumes:
-      - ./config.yaml:/app/config/config.yaml:ro
+      - ./config.yaml:/app/config.yaml:ro
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/debug/data:/app/data
       - ./nodes/debug/logs:/app/logs
@@ -14,5 +14,7 @@ services:
       - NODE_NAME=DebugNode
       - RUST_LOG=debug
       - RUST_BACKTRACE=1
+      - IC_URL=http://localhost:4943
+    network_mode: host
     ports:
       - "33399:33334" 
