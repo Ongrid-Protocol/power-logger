@@ -7,20 +7,31 @@ use crate::gps::Location;
 pub struct DeviceConfig {
     pub id: String,
     pub peer_id: Option<String>,
-    pub name: String,
+    pub node_name: String,
     pub device_type: String,
     pub contract_address: String,
-    pub rabbitmq: RabbitMQConfig,
     pub location: Location,
     pub specifications: DeviceSpecifications,
-    pub sensors: SensorConfig,
+}
+
+pub struct NodeConfig {
+    pub rabbitmq: RabbitMQSettings,
+    pub sensors: SensorSettings,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct RabbitMQConfig {
+pub struct RabbitMQSettings {
     pub exchange: String,
     pub routing_key: String,
     pub queue: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SensorSettings {
+    pub temperature: SensorRange,
+    pub light: SensorRange,
+    pub current: SensorRange,
+    pub voltage: SensorRange,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -84,7 +95,6 @@ pub struct DefaultLoggingConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub devices: Vec<DeviceConfig>,
-    pub defaults: Vec<DeviceConfig>,
 }
 
 impl Config {

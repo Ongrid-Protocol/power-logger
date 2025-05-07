@@ -13,10 +13,10 @@ pub struct Country {
 pub struct Location {
     pub latitude: f64,
     pub longitude: f64,
-    pub altitude: f64,
     pub timestamp: u64,
-    pub accuracy: f32,  // in meters
+    pub accuracy: f32,
     pub satellites: u8,
+    pub altitude: f64,
     pub country: Option<Country>,  // Country information
 }
 

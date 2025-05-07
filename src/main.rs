@@ -17,7 +17,7 @@ use std::time::Instant; // Import Instant for duration checking if needed later
 use rand::Rng;
 use std::fs;
 use power_logger::gps::{Location, Country};
-use power_logger::config::Config;
+use power_logger::config::{Config, NodeConfig};
 use power_logger::sensors::SensorReadings;
 use power_logger::power::PowerReadings;
 use power_logger::crypto::{Crypto, EncryptedData, CryptoError};
@@ -43,7 +43,7 @@ struct SignedMessage {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct NodeConfig {
+struct LocalConfig {
     node: NodeSettings,
 }
 
@@ -52,6 +52,8 @@ struct NodeSettings {
     port: u16,
     ic: ICSettings,
     peer_nodes: Vec<String>,
+    rabbitmq: power_logger::config::RabbitMQSettings,
+    sensors: power_logger::config::SensorSettings,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -187,13 +189,13 @@ fn open_file(path: &Path) -> Result<File, Box<dyn Error>> {
 }
 
 
-fn load_config() -> Result<(NodeConfig, Config), Box<dyn Error>> {
+fn load_config() -> Result<(LocalConfig, Config), Box<dyn Error>> {
     let config_path = Path::new("config.yaml");
     let config_devices_path = Path::new("devices.yaml");
     
     // Load main config
     let file = open_file(config_path)?;
-    let node_config: NodeConfig = serde_yaml::from_reader(file)?;
+    let node_config: LocalConfig = serde_yaml::from_reader(file)?;
     
     // Load devices config
     let device_file = open_file(config_devices_path)?;
@@ -311,7 +313,7 @@ fn test_connectivity(target_ip: &str) -> bool {
 
 impl PowerData {
     fn new_plain(device_id: &str, config: &Config) -> Self {
-        let (config, config_devices) = load_config().expect("Failed to load config");
+        let (local_config, config_devices) = load_config().expect("Failed to load config");
         
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -336,10 +338,10 @@ impl PowerData {
                 &Location {
                     latitude: 37.7749,
                     longitude: -122.4194,
-                    altitude: 0.0,
                     timestamp,
                     accuracy: 5.0,
                     satellites: 8,
+                    altitude: 0.0,
                     country: Some(Country {
                         code: "US".to_string(),
                         name: "United States".to_string(),
@@ -353,14 +355,20 @@ impl PowerData {
         let location = Location {
             latitude: location_info.latitude,
             longitude: location_info.longitude,
-            altitude: location_info.altitude,
             timestamp, // Use the same timestamp as the PowerData
-            accuracy: 5.0, // Default accuracy of 5 meters
-            satellites: 8, // Default number of satellites
+            accuracy: 5.0,
+            satellites: 8,
+            altitude: 0.0,
             country: location_info.country.clone(),
         };
     
-        let sensor_readings = SensorReadings::new(device_config);
+        // Create a NodeConfig instance from LocalConfig
+        let node_config = power_logger::config::NodeConfig {
+            rabbitmq: local_config.node.rabbitmq.clone(),
+            sensors: local_config.node.sensors.clone(),
+        };
+        
+        let sensor_readings = SensorReadings::new(&node_config);
         let power_readings = PowerReadings::new_with_sensors(device_config, &sensor_readings);
     
         Self {
@@ -652,7 +660,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Create listen address using public IP
     let listen_addr = format!("/ip4/{}/tcp/{}", public_ip, config.node.port).parse()?;
-    // let listen_addr_udp = format!("/ip4/{}/udp/{}/quic-v1", public_ip, config.node.port).parse()?;
+    // let listen_addr_udp = format!("/ip4/{}/udp/{}/quic-v1", public_ip, node_config.node.port).parse()?;
     swarm.listen_on(listen_addr)?;
     // swarm.listen_on(listen_addr_udp)?;
 
@@ -883,8 +891,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     // Publish verified data
                                     if let Err(e) = rabbitmq_client.publish_verified_data(
                                         verified_data,
-                                        &device_config.rabbitmq.exchange,
-                                        &device_config.rabbitmq.routing_key,
+                                        &config.node.rabbitmq.exchange,
+                                        &config.node.rabbitmq.routing_key,
                                     ).await {
                                         eprintln!("Failed to publish verified data to RabbitMQ: {}", e);
                                     } else {

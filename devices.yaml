@@ -1,20 +1,18 @@
 devices:
-- id: SG1001KE01
-  peer_id: 12D3KooWDGYVsHj3H2qa6KjJVGCTPaKUS2YS9Urjuwo2mcRWbhAr
-  name: Solar Generator Kenya 1
-  device_type: solar_controller
+- id: SG1005KE02
+  peer_id: 12D3KooWPdC3krq4iDC6pUd3hh8mTom3gENNeJoUVGdr9n1hJMqb
+  node_name: NinevehRutherford
+  node_creation_number: 1746605821
+  device_type: Solar Generator
   contract_address: '0x0000000000000000000000000000000000000000'
-  rabbitmq:
-    exchange: power_data
-    routing_key: verified_data
-    queue: power_data_queue
+  wallet_address: '0xaDdb303C89c84cDC484AF0fE4701f330ca01aFD6'
   location:
-    latitude: -1.2921
-    longitude: 36.8219
-    altitude: 0.0
-    timestamp: 0
-    accuracy: 5.0
+    latitude: 3.9
+    longitude: 14.5
+    altitude: 0
+    accuracy: 5
     satellites: 8
+    timestamp: 1746605324
     country:
       code: KE
       name: Kenya
@@ -22,24 +20,54 @@ devices:
   specifications:
     max_wattage: 1200
     voltage_range: 220V-240V
+    frequency_range: 50
+    battery_capacity: 200
+    phase_type: single
+- id: SG1003NG02
+  peer_id: 12D3KooWFabkdNfCfArY8AZQmysy4QH65JKVix1MtzMXyGHJ9UJc
+  node_name: XianTesla
+  node_creation_number: 1746606124
+  device_type: Solar Generator
+  contract_address: '0x0000000000000000000000000000000000000000'
+  wallet_address: '0xaDdb303C89c84cDC484AF0fE4701f330ca01aFD6'
+  location:
+    latitude: 2.9
+    longitude: 34
+    altitude: 0
+    accuracy: 5
+    satellites: 8
+    timestamp: 1746606076
+    country:
+      code: NG
+      name: Nigeria
+      region: Africa
+  specifications:
+    max_wattage: 1200
+    voltage_range: 220V-240V
+    frequency_range: 50
+    battery_capacity: 200
+    phase_type: single
+- id: SG1003NG02
+  peer_id: 12D3KooWKsVZnPQwM2t21Q967vzYqJ3HWmUETnEHduygGbAoUpmk
+  node_name: DelphiAristotle
+  node_creation_number: 1746605148
+  device_type: Solar Generator
+  contract_address: '0x0000000000000000000000000000000000000000'
+  wallet_address: '0xaDdb303C89c84cDC484AF0fE4701f330ca01aFD6'
+  location:
+    latitude: 2
+    longitude: 3
+    altitude: 0
+    accuracy: 5
+    satellites: 8
+    timestamp: 1746604967
+    country:
+      code: NG
+      name: Nigeria
+      region: Africa
+  specifications:
+    max_wattage: 1200kWh
+    voltage_range: 220V-240V
     frequency_range: 50Hz
     battery_capacity: 12kWh
     phase_type: single
-  sensors:
-    temperature:
-      min: 0
-      max: 100
-      unit: Celsius
-    light:
-      min: 0
-      max: 1023
-      unit: Lux
-    current:
-      min: 0
-      max: 5000
-      unit: mA
-    voltage:
-      min: 0
-      max: 300000
-      unit: mV
-defaults:

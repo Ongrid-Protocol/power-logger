@@ -1,6 +1,6 @@
 use rand::Rng;
 use serde::{Serialize, Deserialize};
-use crate::config::DeviceConfig;
+use crate::config::{DeviceConfig, NodeConfig};
 use crate::sensors::SensorReadings;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,11 +22,11 @@ pub struct PowerReadings {
 }
 
 impl PowerReadings {
-    pub fn new(device_config: &DeviceConfig) -> Self {
+    pub fn new(node_config: &NodeConfig , device_config: &DeviceConfig) -> Self {
         let mut rng = rand::thread_rng();
         
         // Create sensor readings first to get light intensity
-        let sensor_readings = SensorReadings::new(device_config);
+        let sensor_readings = SensorReadings::new(&node_config);
         
         // Parse voltage and frequency ranges from device specifications
         let voltage_range: Vec<f64> = device_config.specifications.voltage_range
