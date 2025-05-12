@@ -2,6 +2,8 @@ use std::error::Error;
 use std::fs;
 use ic_agent::Agent;
 use candid::Principal;
+use serde_yaml;
+use power_logger::config::Config;
 
 /// Fetches the devices.yaml content from the canister
 pub async fn fetch_devices_yaml(agent: &Agent, canister_id: &Principal) -> Result<String, Box<dyn Error>> {
@@ -16,22 +18,21 @@ pub async fn fetch_devices_yaml(agent: &Agent, canister_id: &Principal) -> Resul
 }
 
 /// Fetches and saves the devices.yaml file
-pub async fn fetch_and_save_devices_yaml(agent: &Agent, canister_id: &Principal) {
-    match fetch_devices_yaml(agent, canister_id).await {
-        Ok(yaml_content) => {
-            if !yaml_content.is_empty() {
-                // Save to devices.yaml file
-                if let Err(e) = fs::write("devices.yaml", yaml_content) {
-                    println!("Failed to write devices.yaml: {}", e);
-                } else {
-                    println!("Successfully updated devices.yaml from canister");
-                }
-            } else {
-                println!("Warning: Received empty devices.yaml from canister");
-            }
-        },
-        Err(e) => println!("Error fetching devices.yaml: {}", e),
+pub async fn fetch_and_save_devices_yaml(agent: &Agent, canister_id: &Principal) -> Result<(), Box<dyn Error>> {
+    let yaml_content = fetch_devices_yaml(agent, canister_id).await?;
+    
+    if yaml_content.is_empty() {
+        return Err("Received empty devices.yaml from canister".into());
     }
+
+    // Validate the YAML content by attempting to parse it
+    let config: Config = serde_yaml::from_str(&yaml_content)?;
+    
+    // Save to devices.yaml file
+    fs::write("devices.yaml", yaml_content)?;
+    println!("Successfully updated devices.yaml from canister");
+    
+    Ok(())
 }
 
 /// Gets the number of registered nodes

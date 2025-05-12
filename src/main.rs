@@ -321,7 +321,7 @@ impl PowerData {
             .as_secs();
     
         // Use a safe approach to get device configuration or create default values
-        let device_config = match config_devices.get_device(device_id) {
+        let device_config = match config_devices.get_device_by_peer_id(device_id) {
             Some(config) => config,
             None => {
                 println!("Warning: Device {} not found in configuration, using defaults", device_id);
@@ -514,20 +514,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         save_private_key(&id_keys)?;
 
                         // After successful OTP registration:
-                        match devices_yaml::fetch_devices_yaml(&agent, &canister_id).await {
-                            Ok(yaml_content) => {
-                                if !yaml_content.is_empty() {
-                                    // Save to devices.yaml file
-                                    if let Err(e) = std::fs::write("devices.yaml", yaml_content) {
-                                        println!("Failed to write devices.yaml: {}", e);
-                                    } else {
-                                        println!("Successfully updated devices.yaml from canister");
-                                    }
-                                } else {
-                                    println!("Warning: Received empty devices.yaml from canister");
-                                }
-                            },
-                            Err(e) => println!("Error fetching devices.yaml: {}", e),
+                        if let Err(e) = devices_yaml::fetch_and_save_devices_yaml(&agent, &canister_id).await {
+                            println!("Error updating devices.yaml: {}", e);
                         }
                         registration_success = true;
                     } else {
@@ -711,7 +699,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut heartbeat_interval = interval(Duration::from_secs(60));
     
     // Message verification every 10 minutes (600 seconds)
-    let mut signing_request_interval = interval(Duration::from_secs(600)); 
+    let mut signing_request_interval = interval(Duration::from_secs(60)); 
     
     // Retry publishing failed messages every 30 seconds
     let mut retry_publish_interval = interval(Duration::from_secs(30));
@@ -875,14 +863,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 ).await;
 
                                 // Get device configuration
-                                println!("Looking up device ID: {}", entry.originator_id);
-                                let device_config = config_devices.get_device(&entry.originator_id)
+                                println!("Looking up device with peer ID: {}", entry.originator_id);
+                                let device_config = config_devices.get_device_by_peer_id(&entry.originator_id)
                                     .expect("Device configuration not found");
 
                                 // Create verified data structure
                                 let verified_data = VerifiedData {
-                                    device_id: entry.originator_id.clone(),
-                                    contract_address: device_config.contract_address.clone(),
+                                    message_hash: message_hash.clone(),
+                                    device_id: device_config.id.clone(),
+                                    device_name: device_config.node_name.clone(),
+                                    device_type: device_config.device_type.clone(),
+                                    wallet_address: device_config.wallet_address.clone(),
+                                    max_wattage: device_config.specifications.max_wattage,
+                                    voltage_range: device_config.specifications.voltage_range.clone(),
+                                    frequency_range: device_config.specifications.frequency_range.clone(),
+                                    battery_capacity: device_config.specifications.battery_capacity.clone(),
+                                    phase_type: device_config.specifications.phase_type.clone(),
                                     timestamp: SystemTime::now()
                                         .duration_since(UNIX_EPOCH)
                                         .unwrap()
@@ -959,7 +955,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         println!("Connection closed with peer: {}. Cause: {:?}", peer_id, cause);
                     },
                     SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
-                        println!("Failed to connect to peer: {:?} - Error: {}", peer_id, error);
+                        // println!("Failed to connect to peer: {:?} - Error: {}", peer_id, error);
                         
                         // Add to failed connections metrics
                         let mut metrics = metrics_clone.lock().unwrap();
@@ -968,7 +964,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         
                         // If we have a peer_id, add to the retry list
                         if let Some(peer_id) = peer_id {
-                            println!("Will attempt to redial peer {} during the next retry cycle", peer_id);
+                            // println!("Will attempt to redial peer {} during the next retry cycle", peer_id);
                             
                             // Add to retry list if we have the multiaddr
                             for addr in &dialable_node_addrs {

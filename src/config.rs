@@ -9,7 +9,7 @@ pub struct DeviceConfig {
     pub peer_id: Option<String>,
     pub node_name: String,
     pub device_type: String,
-    pub contract_address: String,
+    pub wallet_address: String,
     pub location: Location,
     pub specifications: DeviceSpecifications,
 }
@@ -105,7 +105,12 @@ impl Config {
     }
 
     pub fn get_device(&self, device_id: &str) -> Option<&DeviceConfig> {
-        self.devices.iter().find(|d| d.id == device_id || d.peer_id.as_deref() == Some(device_id))
+        // First try to find by peer_id
+        if let Some(device) = self.devices.iter().find(|d| d.peer_id.as_deref() == Some(device_id)) {
+            return Some(device);
+        }
+        // Fall back to device id if not found by peer_id
+        self.devices.iter().find(|d| d.id == device_id)
     }
 
     pub fn get_device_by_peer_id(&self, peer_id: &str) -> Option<&DeviceConfig> {

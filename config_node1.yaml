@@ -1,0 +1,29 @@
+node:
+  port: 33335
+  ic:
+    network: "local"  # or "mainnet"
+    canister_id: "bkyz2-fmaaa-aaaaa-qaaaq-cai"  # Bootstrap node canister ID
+    is_local: true  # Set to false for mainnet
+    url: "http://127.0.0.1:4943"  # Using localhost with host network mode
+  rabbitmq:
+    exchange: "power_data"
+    routing_key: "verified_data"
+    queue: "power_data_queue"
+  peer_nodes: []  # Will be populated from the canister
+  sensors:
+      temperature:
+        min: 0
+        max: 100
+        unit: "Celsius"
+      light:
+        min: 0
+        max: 1023
+        unit: "Lux"
+      current:
+        min: 0
+        max: 5000
+        unit: "mA"
+      voltage:
+        min: 0
+        max: 300000
+        unit: "mV"

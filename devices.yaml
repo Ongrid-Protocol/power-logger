@@ -1,25 +1,25 @@
 devices:
-  - id: SC1000KE00
-    peer_id: 12D3KooWPdC3krq4iDC6pUd3hh8mTom3gENNeJoUVGdr9n1hJMqb
-    node_name: NinevehRutherford
-    node_creation_number: 1746605148
-    device_type: Solar Generator
-    contract_address: '0x0000000000000000000000000000000000000000'
-    wallet_address: '0xaDdb303C89c84cDC484AF0fE4701f330ca01aFD6'
-    location:
-      latitude: 2.9
-      longitude: 34
-      altitude: 0
-      accuracy: 5
-      satellites: 8
-      timestamp: 1746605148
-      country:
-        code: KE
-        name: Kenya
-        region: Africa
-    specifications:
-      max_wattage: 1200
-      voltage_range: 220V-240V
-      frequency_range: 50
-      battery_capacity: 200
-      phase_type: single  
+- id: SG1004ZA02
+  peer_id: 12D3KooWGFCKufQHVaADwftyaXRwQyA1s6uV56A3r39gjjDXSAwC
+  node_name: ElephantCopernicus
+  node_creation_number: 1746717369
+  device_type: Solar Generator
+  contract_address: '0x0000000000000000000000000000000000000000'
+  wallet_address: '0xaDdb303C89c84cDC484AF0fE4701f330ca01aFD6'
+  location:
+    latitude: 8
+    longitude: 4.9
+    altitude: 0
+    accuracy: 5
+    satellites: 6
+    timestamp: 1746717047
+    country:
+      code: ZA
+      name: South Africa
+      region: Africa
+  specifications:
+    max_wattage: 400
+    voltage_range: 220V-240V
+    frequency_range: 50
+    battery_capacity: 200
+    phase_type: single
