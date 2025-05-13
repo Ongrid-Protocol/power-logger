@@ -10,8 +10,16 @@ use crate::gps::Location;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VerifiedData {
+    pub message_hash: String,
     pub device_id: String,
+    pub device_name: String,
+    pub device_type: String,
     pub wallet_address: String,
+    pub max_wattage: u32,
+    pub voltage_range: String,
+    pub frequency_range: String,
+    pub battery_capacity: String,
+    pub phase_type: String,
     pub timestamp: u64,
     pub sensor_readings: SensorReadings,
     pub power_readings: PowerReadings,

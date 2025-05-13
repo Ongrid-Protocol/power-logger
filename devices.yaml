@@ -1,25 +1,25 @@
 devices:
-- id: SG1004ZA02
-  peer_id: 12D3KooWGFCKufQHVaADwftyaXRwQyA1s6uV56A3r39gjjDXSAwC
-  node_name: ElephantCopernicus
-  node_creation_number: 1746717369
+- id: SG1004GB02
+  peer_id: 12D3KooWRTkee47rmgcgyLHeYLbFTxMzuLsVGpHPhZ9g4Q1Ma86n
+  node_name: WolfTuring
+  node_creation_number: 1747151763
   device_type: Solar Generator
   contract_address: '0x0000000000000000000000000000000000000000'
-  wallet_address: '0xaDdb303C89c84cDC484AF0fE4701f330ca01aFD6'
+  wallet_address: '0x89FaB40bE9abe27F5a9460a9483e366424697f95'
   location:
-    latitude: 8
-    longitude: 4.9
+    latitude: 37.5665
+    longitude: 126.978
     altitude: 0
     accuracy: 5
-    satellites: 6
-    timestamp: 1746717047
+    satellites: 8
+    timestamp: 1747151729
     country:
-      code: ZA
-      name: South Africa
-      region: Africa
+      code: GB
+      name: United Kingdom
+      region: Europe
   specifications:
-    max_wattage: 400
-    voltage_range: 220V-240V
+    max_wattage: 1200
+    voltage_range: 220-240
     frequency_range: 50
-    battery_capacity: 200
+    battery_capacity: 12000
     phase_type: single
