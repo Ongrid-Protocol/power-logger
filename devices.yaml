@@ -1,8 +1,8 @@
 devices:
-- id: SG1004GB02
-  peer_id: 12D3KooWRTkee47rmgcgyLHeYLbFTxMzuLsVGpHPhZ9g4Q1Ma86n
-  node_name: WolfTuring
-  node_creation_number: 1747151763
+- id: SG1003CA03
+  peer_id: 12D3KooWNGMJSLgmV8RooZHxwye7C44UN7Bq1Li5Vf84Ro6HTMLy
+  node_name: HeisenbergZebra
+  node_creation_number: 1747258842
   device_type: Solar Generator
   contract_address: '0x0000000000000000000000000000000000000000'
   wallet_address: '0x89FaB40bE9abe27F5a9460a9483e366424697f95'
@@ -12,11 +12,11 @@ devices:
     altitude: 0
     accuracy: 5
     satellites: 8
-    timestamp: 1747151729
+    timestamp: 1747258705
     country:
-      code: GB
-      name: United Kingdom
-      region: Europe
+      code: CA
+      name: Canada
+      region: North America
   specifications:
     max_wattage: 1200
     voltage_range: 220-240

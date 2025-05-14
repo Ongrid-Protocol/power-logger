@@ -18,13 +18,13 @@ for i in $(seq 1 10); do
   
   # Create a temporary config file with the unique port
   cp config.yaml nodes/node$i/config.yaml
-  sed -i '' "s/port: 33334/port: $PORT/" nodes/node$i/config.yaml
+  sed -i '' "s/port: 8080/port: $PORT/" nodes/node$i/config.yaml
 
   docker run -it --rm \
     --name power-node-$i \
     --network=host \
+    -e IC_URL="http://host.docker.internal:4943" \
     -v $(pwd)/nodes/node$i/config.yaml:/app/config.yaml:ro \
-    -v $(pwd)/devices.yaml:/app/devices.yaml:ro \
     -v $(pwd)/nodes/node$i/data:/app/data \
     -v $(pwd)/nodes/node$i/logs:/app/logs \
     -e NODE_ID=$i \

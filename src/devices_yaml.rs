@@ -6,7 +6,7 @@ use serde_yaml;
 use power_logger::config::Config;
 
 /// Fetches the devices.yaml content from the canister
-pub async fn fetch_devices_yaml(agent: &Agent, canister_id: &Principal) -> Result<String, Box<dyn Error>> {
+pub async fn fetch_devices_yaml(agent: &Agent, canister_id: &Principal) -> Result<String, Box<dyn Error + Send + Sync>> {
     let response = agent
         .query(canister_id, "get_devices_yaml")
         .with_arg(candid::encode_args(())?)
@@ -18,7 +18,7 @@ pub async fn fetch_devices_yaml(agent: &Agent, canister_id: &Principal) -> Resul
 }
 
 /// Fetches and saves the devices.yaml file
-pub async fn fetch_and_save_devices_yaml(agent: &Agent, canister_id: &Principal) -> Result<(), Box<dyn Error>> {
+pub async fn fetch_and_save_devices_yaml(agent: &Agent, canister_id: &Principal) -> Result<(), Box<dyn Error + Send + Sync>> {
     let yaml_content = fetch_devices_yaml(agent, canister_id).await?;
     
     if yaml_content.is_empty() {
@@ -36,7 +36,7 @@ pub async fn fetch_and_save_devices_yaml(agent: &Agent, canister_id: &Principal)
 }
 
 /// Gets the number of registered nodes
-pub async fn get_registered_node_count(agent: &Agent, canister_id: &Principal) -> Result<usize, Box<dyn Error>> {
+pub async fn get_registered_node_count(agent: &Agent, canister_id: &Principal) -> Result<usize, Box<dyn Error + Send + Sync>> {
     let response = agent
         .query(canister_id, "get_nodes")
         .with_arg(candid::encode_args(())?)

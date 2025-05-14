@@ -89,7 +89,7 @@ type VerificationCounter = Arc<Mutex<u64>>;
 type FailedPublishQueue = Arc<Mutex<VecDeque<SignedMessage>>>; // Use VecDeque for FIFO retry
 
 // Log file structure
-type LogFile = Arc<Mutex<BufWriter<File>>>; // Use BufWriter for efficiency
+type LogFile = Arc<Mutex<File>>; // Corrected: Direct File access
 
 // Add network metrics structure
 #[derive(Debug, Default)]
@@ -124,15 +124,20 @@ struct PowerData {
 type RetryList = Arc<Mutex<Vec<RetryPeer>>>;
 
 async fn write_log(log_file: &LogFile, message: String) {
-    let mut writer = log_file.lock().unwrap();
-    if let Err(e) = writeln!(writer, "[{}] {}", Utc::now().to_rfc3339(), message) {
+    let mut file_guard = log_file.lock().unwrap();
+    let timestamped_message = format!("[{}] {}\n", Utc::now().to_rfc3339(), message);
+    if let Err(e) = file_guard.write_all(timestamped_message.as_bytes()) {
         eprintln!("Failed to write to verification log: {}", e); // Log errors to stderr
     }
-    // Flush occasionally might be needed if logs are critical in case of crash
-    // writer.flush().ok();
+    // To ensure data is written promptly, especially if the program might panic,
+    // an explicit flush might be considered, though write_all to a File often flushes.
+    // However, frequent explicit flushes can impact performance.
+    // if let Err(e) = file_guard.flush() {
+    //     eprintln!("Failed to flush verification log: {}", e);
+    // }
 }
 
-async fn register_node(agent: &Agent, canister_id: &Principal, node_principal: Principal, multiaddr: &str, otp: &str, peer_id: &str) -> Result<RegisterResponse, Box<dyn Error>> {
+async fn register_node(agent: &Agent, canister_id: &Principal, node_principal: Principal, multiaddr: &str, otp: &str, peer_id: &str) -> Result<RegisterResponse, Box<dyn Error + Send + Sync>> {
     let response = agent
         .update(canister_id, "register_node")
         .with_arg(candid::encode_args((
@@ -312,33 +317,33 @@ fn test_connectivity(target_ip: &str) -> bool {
 }
 
 impl PowerData {
-    fn new_plain(device_id: &str, config: &Config) -> Self {
-        let (local_config, config_devices) = load_config().expect("Failed to load config");
-        
+    fn new_plain(device_id_str: &str, current_devices_config: &Config) -> Self {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
             .as_secs();
     
-        // Use a safe approach to get device configuration or create default values
-        let device_config = match config_devices.get_device_by_peer_id(device_id) {
+        // Use the passed current_devices_config for device lookup
+        let device_config_for_power = match current_devices_config.get_device_by_peer_id(device_id_str) {
             Some(config) => config,
             None => {
-                println!("Warning: Device {} not found in configuration, using defaults", device_id);
-                &config_devices.devices[0] // Use first device as fallback
+                println!("Warning: Device with peer_id {} not found in provided devices configuration. Using first device as fallback.", device_id_str);
+                // This fallback could panic if current_devices_config.devices is empty.
+                // A more robust solution would be to ensure devices list is never empty or handle this case.
+                &current_devices_config.devices[0] 
             }
         };
         
-        // Similarly for location
-        let location_info = match config_devices.get_device_location(device_id) {
-            Some(loc) => loc,
+        // Use the passed current_devices_config for location lookup
+        let location_from_config: Location = match current_devices_config.get_device_location(device_id_str) {
+            Some(loc_ref) => loc_ref.clone(), // Clone to get an owned Location
             None => {
-                println!("Warning: Location not found for device {}, using defaults", device_id);
-                // Create a default location (San Francisco)
-                &Location {
+                println!("Warning: Location not found for device peer_id {}, using default location.", device_id_str);
+                // Construct a default Location, ensuring timestamp is current
+                Location {
                     latitude: 37.7749,
                     longitude: -122.4194,
-                    timestamp,
+                    timestamp, // Use the current PowerData timestamp
                     accuracy: 5.0,
                     satellites: 8,
                     altitude: 0.0,
@@ -351,31 +356,40 @@ impl PowerData {
             }
         };
         
-        // Create a proper Location struct with all required fields
+        // Create the final Location struct, ensuring its timestamp is the main PowerData timestamp
         let location = Location {
-            latitude: location_info.latitude,
-            longitude: location_info.longitude,
-            timestamp, // Use the same timestamp as the PowerData
-            accuracy: 5.0,
-            satellites: 8,
-            altitude: 0.0,
-            country: location_info.country.clone(),
+            latitude: location_from_config.latitude,
+            longitude: location_from_config.longitude,
+            timestamp, // Ensure this is the primary timestamp for the data record
+            accuracy: location_from_config.accuracy,
+            satellites: location_from_config.satellites,
+            altitude: location_from_config.altitude,
+            country: location_from_config.country.clone(),
         };
     
-        // Create a NodeConfig instance from LocalConfig
-        let node_config = power_logger::config::NodeConfig {
-            rabbitmq: local_config.node.rabbitmq.clone(),
-            sensors: local_config.node.sensors.clone(),
+        // Load LocalConfig settings from config.yaml specifically for RabbitMQ and Sensors.
+        // This is a targeted load to avoid broader changes to PowerData::new_plain signature for now.
+        let local_config_settings: LocalConfig = {
+            let file = File::open("config.yaml")
+                .expect("PowerData::new_plain: Failed to open config.yaml for LocalConfig");
+            serde_yaml::from_reader(file)
+                .expect("PowerData::new_plain: Failed to parse LocalConfig from config.yaml")
         };
         
-        let sensor_readings = SensorReadings::new(&node_config);
-        let power_readings = PowerReadings::new_with_sensors(device_config, &sensor_readings);
+        let node_config_for_sensors = power_logger::config::NodeConfig {
+            rabbitmq: local_config_settings.node.rabbitmq.clone(),
+            sensors: local_config_settings.node.sensors.clone(),
+        };
+        
+        let sensor_readings = SensorReadings::new(&node_config_for_sensors);
+        // Pass device_config_for_power (derived from current_devices_config) to PowerReadings
+        let power_readings = PowerReadings::new_with_sensors(device_config_for_power, &sensor_readings);
     
         Self {
             timestamp,
             sensor_readings,
             power_readings,
-            device_id: device_id.to_string(),
+            device_id: device_id_str.to_string(), // Use the passed peer_id string as device_id
             location,
         }
     }
@@ -395,7 +409,12 @@ impl PowerData {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let (config, config_devices) = load_config()?;
+    // Load initial configurations
+    let (local_node_initial_config, initial_devices_config_val) = load_config().expect("Failed to load initial main config");
+    let config_devices: Arc<Mutex<Config>> = Arc::new(Mutex::new(initial_devices_config_val));
+    // 'config' variable will now refer to local_node_initial_config for node-specific settings like port, IC URL etc.
+    // The 'devices.yaml' content is managed by 'config_devices' Arc<Mutex<Config>>.
+
     let _ = tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .try_init();
@@ -429,7 +448,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .create(true)
         .append(true)
         .open(&log_path)?;
-    let log_file: LogFile = Arc::new(Mutex::new(BufWriter::new(file)));
+    let log_file: LogFile = Arc::new(Mutex::new(file));
     println!("Logging verification events to: {}", log_path);
     // --- End Log File Setup ---
 
@@ -458,7 +477,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let ic_url = env::var("IC_URL").unwrap_or_else(|_| {
         println!("Warning: IC_URL environment variable not set, using URL from config.yaml");
-        config.node.ic.url.clone()
+        local_node_initial_config.node.ic.url.clone()
     });
     println!("Using IC URL: {}", ic_url);
 
@@ -466,26 +485,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_url(&ic_url)
         .build()?;
 
-    if config.node.ic.is_local {
+    if local_node_initial_config.node.ic.is_local {
         // Replace agent.fetch_root_key() with setting the root key directly
-        let root_key =  [48, 129, 130, 48, 29, 6, 13, 43, 6, 1, 4, 1, 130, 220, 
-        124, 5, 3, 1, 2, 1, 6, 12, 43, 6, 1, 4, 1, 130, 220, 124, 5, 3, 2, 1, 
-        3, 97, 0, 172, 2, 244, 232, 241, 28, 94, 8, 219, 229, 120, 28, 142,
-        14, 249, 84, 173, 70, 94, 119, 217, 61, 121, 186, 253, 87, 78, 78,
-        170, 119, 95, 156, 195, 18, 61, 71, 76, 238, 52, 197, 137, 141,
-        121, 213, 237, 9, 32, 142, 20, 53, 22, 175, 170, 92, 157, 63, 
-        134, 159, 112, 27, 93, 2, 107, 133, 101, 98, 171, 172, 221, 230,
-        5, 63, 206, 18, 94, 74, 95, 10, 246, 254, 79,
-        217, 114, 61, 208, 102, 210, 127, 0, 106, 216, 56, 139, 105, 146, 29];
+        let root_key = [48, 129, 130, 48, 29, 6, 13, 43, 6, 1, 4, 1, 130, 220, 124, 5, 3, 1, 2, 1, 6, 12, 43, 6, 1, 4, 1, 130, 220, 124, 5, 3, 2, 1, 3, 97, 0, 136, 201, 253, 94, 79, 41, 135, 119, 75, 188, 202, 25, 226, 219, 55, 96, 203, 241, 179, 103, 141, 102, 242, 178, 5, 22, 148, 33, 191, 9, 17, 25, 216, 215, 88, 94, 53, 36, 21, 101, 186, 65, 244, 248, 54, 188, 28, 227, 0, 67, 163, 55, 74, 199, 152, 176, 232, 112, 180, 61, 143, 237, 178, 143, 112, 59, 34, 223, 222, 241, 129, 122, 203, 185, 96, 84, 4, 113, 251, 187, 72, 122, 14, 38, 28, 61, 12, 183, 144, 63, 25, 111, 4, 208, 239, 228];
         agent.set_root_key(root_key.to_vec());
     }
 
-    let canister_id = Principal::from_text(&config.node.ic.canister_id)?;
+    let canister_id = Principal::from_text(&local_node_initial_config.node.ic.canister_id)?;
     println!("Canister ID: {}", canister_id);
 
     // Get the public IP address
     let public_ip = get_public_ip().await?;
-    let public_multiaddr = format!("/ip4/{}/tcp/{}/p2p/{}", public_ip, config.node.port, peer_id);
+    let public_multiaddr = format!("/ip4/{}/tcp/{}/p2p/{}", public_ip, local_node_initial_config.node.port, peer_id);
     println!("Using public multiaddress for registration/heartbeat: {}", public_multiaddr);
 
     // Check if this is a new node (no private key file existed)
@@ -526,6 +537,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         // After successful OTP registration:
                         if let Err(e) = devices_yaml::fetch_and_save_devices_yaml(&agent, &canister_id).await {
                             println!("Error updating devices.yaml: {}", e);
+                        } else {
+                            reload_devices_config_in_memory(&config_devices).await;
                         }
                         registration_success = true;
                     } else {
@@ -558,7 +571,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     // When a node reconnects:
                     if response.success {
                         // Fetch updated devices.yaml from canister and save it
-                        devices_yaml::fetch_and_save_devices_yaml(&agent, &canister_id).await;
+                        if devices_yaml::fetch_and_save_devices_yaml(&agent, &canister_id).await.is_err() {
+                            println!("Error updating devices.yaml on reconnect");
+                        } else {
+                            reload_devices_config_in_memory(&config_devices).await;
+                        }
                     }
                 } else {
                     println!("Failed to register node with canister");
@@ -568,7 +585,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let fetched_nodes = fetch_peer_nodes(&agent, &config.node).await?;
+    let fetched_nodes = fetch_peer_nodes(&agent, &local_node_initial_config.node).await?;
     // println!("Fetched Peer Nodes from canister: {:?}", fetched_nodes);
 
     let active_nodes: Vec<String> = fetched_nodes
@@ -665,7 +682,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Subscribed to topic: {}", topic.hash());
 
     // Create listen address using public IP
-    let listen_addr = format!("/ip4/{}/tcp/{}", public_ip, config.node.port).parse()?;
+    let listen_addr = format!("/ip4/{}/tcp/{}", public_ip, local_node_initial_config.node.port).parse()?;
     // let listen_addr_udp = format!("/ip4/{}/udp/{}/quic-v1", public_ip, node_config.node.port).parse()?;
     swarm.listen_on(listen_addr)?;
     // swarm.listen_on(listen_addr_udp)?;
@@ -726,6 +743,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Pre-verification node connection interval (5 seconds before verification)
     let mut pre_verification_connection_interval = interval(Duration::from_secs(595));
 
+    // Interval for periodically syncing devices.yaml from the canister (e.g., every 10 minutes)
+    let mut devices_sync_interval = interval(Duration::from_secs(600));
+
     let network_metrics: Arc<Mutex<NetworkMetrics>> = Arc::new(Mutex::new(NetworkMetrics::default()));
     let metrics_clone = network_metrics.clone();
 
@@ -739,6 +759,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let log_file_clone = log_file.clone(); // Clone Arc for the main loop
     let retry_list_clone = retry_list.clone(); // Clone the retry list
 
+    // Clone Arcs and copyables for the periodic devices.yaml sync task
+    let agent_for_sync = agent.clone(); 
+    let canister_id_for_sync = canister_id; // Principal is Copy
+    let config_devices_for_sync = config_devices.clone(); 
+
     // Initialize crypto with a secure key (still needed for API compatibility)
     let mut key = [0u8; 32];
     rand::thread_rng().fill(&mut key);
@@ -751,6 +776,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
     } else {
         "SG7392A15F" // Default to "Solar Generator North America 1"
     };
+
+    // Helper function to reload devices.yaml into the Arc<Mutex<Config>>
+    async fn reload_devices_config_in_memory(config_devices_mutex: &Arc<Mutex<Config>>) {
+        println!("Attempting to reload devices.yaml into memory...");
+        match File::open("devices.yaml") {
+            Ok(file) => {
+                match serde_yaml::from_reader::<_, Config>(file) {
+                    Ok(new_devices_config) => {
+                        let mut guard = config_devices_mutex.lock().unwrap();
+                        *guard = new_devices_config;
+                        println!("In-memory devices_config reloaded successfully.");
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to parse updated devices.yaml for reloading: {}", e);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to open updated devices.yaml for reloading: {}", e);
+            }
+        }
+    }
 
     loop {
         tokio::select! {
@@ -874,8 +921,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                                 // Get device configuration
                                 println!("Looking up device with peer ID: {}", entry.originator_id);
-                                let device_config = config_devices.get_device_by_peer_id(&entry.originator_id)
-                                    .expect("Device configuration not found");
+                                let locked_devices_config = config_devices.lock().unwrap();
+                                let device_config = locked_devices_config.get_device_by_peer_id(&entry.originator_id)
+                                    .expect("Device configuration not found for originator_id");
 
                                 // Create verified data structure
                                 let verified_data = VerifiedData {
@@ -905,8 +953,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     // Publish verified data
                                     if let Err(e) = rabbitmq_client.publish_verified_data(
                                         verified_data,
-                                        &config.node.rabbitmq.exchange,
-                                        &config.node.rabbitmq.routing_key,
+                                        &local_node_initial_config.node.rabbitmq.exchange,
+                                        &local_node_initial_config.node.rabbitmq.routing_key,
                                     ).await {
                                         eprintln!("Failed to publish verified data to RabbitMQ: {}", e);
                                     } else {
@@ -1008,7 +1056,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 println!("Sending heartbeat to canister...");
                 // Refresh public IP on each heartbeat
                 let current_ip = get_public_ip().await?;
-                let current_multiaddr = format!("/ip4/{}/tcp/{}/p2p/{}", current_ip, config.node.port, local_peer_id);
+                let current_multiaddr = format!("/ip4/{}/tcp/{}/p2p/{}", current_ip, local_node_initial_config.node.port, local_peer_id);
                 match send_heartbeat(
                     &agent,
                     &canister_id,
@@ -1033,7 +1081,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             _ = pre_verification_connection_interval.tick() => {
                 println!("Pre-verification node connection check...");
                 // Fetch the latest peers from the canister
-                match fetch_peer_nodes(&agent, &config.node).await {
+                match fetch_peer_nodes(&agent, &local_node_initial_config.node).await {
                     Ok(new_fetched_nodes) => {
                         // Filter out our own node
                         let new_active_nodes: Vec<String> = new_fetched_nodes
@@ -1088,7 +1136,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
                 // Create non-encrypted data for this device only
-                let plain_data = PowerData::new_plain(device_id, &config_devices);
+                let plain_data = PowerData::new_plain(device_id, &*config_devices.lock().unwrap());
                 let json_string = serde_json::to_string_pretty(&plain_data).unwrap_or_else(|e| {
                     eprintln!("Error serializing data: {}", e);
                     String::new()
@@ -1278,6 +1326,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         }
                     }
                 }
+            }
+
+            // Periodic devices.yaml sync
+            _ = devices_sync_interval.tick() => {
+                println!("Periodic sync: Checking for devices.yaml updates from canister...");
+                let agent_clone = agent_for_sync.clone();
+                let config_devices_clone = config_devices_for_sync.clone();
+                // canister_id_for_sync is Copy, so it can be used directly
+
+                tokio::spawn(async move {
+                    match devices_yaml::fetch_and_save_devices_yaml(&agent_clone, &canister_id_for_sync).await {
+                        Ok(_) => {
+                            println!("Periodic sync: devices.yaml fetched and saved successfully.");
+                            reload_devices_config_in_memory(&config_devices_clone).await;
+                        }
+                        Err(e) => {
+                            eprintln!("Periodic sync: Error fetching or saving devices.yaml: {}", e);
+                        }
+                    }
+                });
             }
         }
     }
