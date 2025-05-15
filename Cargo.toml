@@ -30,3 +30,8 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 deadpool-postgres = "0.10"
 tokio-postgres = "0.7"
 dotenv = "0.15"
+# Blockchain dependencies
+ethers = { version = "2.0", features = ["legacy", "abigen"] }
+log = "0.4"
+env_logger = "0.10"
+thiserror = "1.0"

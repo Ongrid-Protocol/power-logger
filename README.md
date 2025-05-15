@@ -238,3 +238,59 @@ If you encounter errors related to GLIBC versions such as:
 ```
 
 This typically means your Rust binary was compiled with a newer version of glibc than what's available in your runtime environment. The Docker setup in this repository uses Ubuntu 22.04 to avoid these issues.
+
+# Blockchain Integration
+
+## Overview
+The power-logger now supports integration with OnGrid Protocol smart contracts to enable on-chain minting of verified energy data. This enables rewarding node operators with carbon credits based on verified green energy production.
+
+## Setup Instructions
+
+### 1. Install Dependencies
+Make sure you have the required dependencies installed:
+
+```bash
+cargo build
+```
+
+### 2. Configure Environment Variables
+Run the setup script to create a template .env file:
+
+```bash
+./setup_env.sh
+```
+
+Edit the generated .env file with your blockchain settings:
+- `BLOCKCHAIN_RPC_URL`: URL of the Ethereum RPC endpoint (e.g., https://sepolia.infura.io/v3/YOUR_INFURA_KEY)
+- `BLOCKCHAIN_PRIVATE_KEY`: Your Ethereum private key (without 0x prefix)
+- `ENERGY_BRIDGE_ADDRESS`: Address of the deployed EnergyDataBridge contract
+
+### 3. Smart Contract Integration
+The power-logger interacts with the following OnGrid Protocol smart contracts:
+- EnergyDataBridge: Submits verified energy data and processes batches
+- CarbonCreditToken: Carbon credits minted based on verified energy data
+- RewardDistributor: Distributes rewards to node operators
+
+## How It Works
+
+1. Verified Data Flow:
+   - Energy data is collected and verified through peer-to-peer consensus
+   - Once verified, data is submitted to the EnergyDataBridge contract
+   - After a challenge period, the data is processed on-chain
+   - Carbon credits are minted to the protocol treasury
+   - Node operators receive rewards based on their contributions
+
+2. Key Features:
+   - On-chain data verification with challenge mechanism
+   - Carbon credit minting proportional to verified energy production
+   - Rewards for node operators who contribute to the network
+
+## Troubleshooting
+
+If you encounter issues with the blockchain integration:
+
+1. Check your `.env` file settings
+2. Ensure your wallet has sufficient ETH for gas fees
+3. Verify that your wallet has the necessary roles on the contracts
+4. Check contract addresses match the deployed contracts
+5. Review logs for detailed error messages

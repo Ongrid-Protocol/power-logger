@@ -1,5 +1,4 @@
-use lapin::{Connection, ConnectionProperties, options::*, types::FieldTable, BasicProperties, message::Delivery};
-use serde::{Serialize, Deserialize};
+use lapin::{Connection, ConnectionProperties};
 use tokio::sync::OnceCell;
 use std::sync::Arc;
 use anyhow::Result;
@@ -7,6 +6,9 @@ use tokio::runtime::Runtime;
 use crate::sensors::SensorReadings;
 use crate::power::PowerReadings;
 use crate::gps::Location;
+use serde::{Serialize, Deserialize};
+use lapin::options::BasicPublishOptions;
+use lapin::BasicProperties;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VerifiedData {

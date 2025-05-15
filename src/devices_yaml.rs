@@ -26,7 +26,7 @@ pub async fn fetch_and_save_devices_yaml(agent: &Agent, canister_id: &Principal)
     }
 
     // Validate the YAML content by attempting to parse it
-    let config: Config = serde_yaml::from_str(&yaml_content)?;
+    let _config: Config = serde_yaml::from_str(&yaml_content)?;
     
     // Save to devices.yaml file
     fs::write("devices.yaml", yaml_content)?;

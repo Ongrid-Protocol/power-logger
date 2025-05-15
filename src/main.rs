@@ -1,7 +1,7 @@
 use std::{error::Error, hash::{Hash, Hasher},collections::hash_map::DefaultHasher,
  collections::{HashSet, HashMap, VecDeque}, fs::{File, OpenOptions}, path::Path, 
- io::{self, BufWriter, Read, Write}, env, sync::{Arc, Mutex},thread, 
- time::{SystemTime, UNIX_EPOCH}, net::{UdpSocket,TcpListener}, process::Command};
+ io::{self, Write}, env, sync::{Arc, Mutex}, 
+ time::{SystemTime, UNIX_EPOCH}, net::{UdpSocket}, process::Command};
 use serde::{Deserialize, Serialize};
 use futures::prelude::*;
 use libp2p::{identity, noise, ping, gossipsub, mdns, swarm::{SwarmEvent, NetworkBehaviour}, tcp, yamux, Multiaddr, PeerId, multiaddr::Protocol};
@@ -20,6 +20,7 @@ use power_logger::config::{Config};
 use power_logger::sensors::SensorReadings;
 use power_logger::power::PowerReadings;
 use power_logger::messaging::{RabbitMQClient, VerifiedData};
+use power_logger::blockchain::BlockchainClient;
 use anyhow::Result;
 
 // Add our new module
@@ -38,6 +39,7 @@ struct SignedMessage {
     sensor_readings: SensorReadings,
     power_readings: PowerReadings,
     location: Location,
+    timestamp: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -220,24 +222,6 @@ fn save_principal_id(principal: &Principal) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn load_principal_id() -> Result<Option<Principal>, Box<dyn Error>> {
-    let path = Path::new("node_principal.txt");
-    if !path.exists() {
-        return Ok(None);
-    }
-
-    let mut file = File::open(path)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-    
-    if contents.is_empty() {
-        return Ok(None);
-    }
-
-    let principal = Principal::from_text(contents.trim())?;
-    Ok(Some(principal))
-}
-
 
 async fn get_public_ip() -> Result<String, Box<dyn Error>> {
     // Try to get public IP from environment first
@@ -387,29 +371,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_env_filter(EnvFilter::from_default_env())
         .try_init();
 
-    // // Check if we should clear the registry
-    // if env::var("CLEAR_REGISTRY").is_ok() {
-    //     let ic_url = env::var("IC_URL").unwrap_or_else(|_| {
-    //         println!("Warning: IC_URL environment variable not set, using URL from config.yaml");
-    //         config.node.ic.url.clone()
-    //     });
-    //     println!("Using IC URL: {}", ic_url);
-
-    //     let agent = Agent::builder()
-    //         .with_url(&ic_url)
-    //         .build()?;
-
-    //     let canister_id = Principal::from_text(&config.node.ic.canister_id)?;
-    //     println!("Clearing registry for canister: {}", canister_id);
-
-    //     match clear_registry(&agent, &canister_id).await {
-    //         Ok(true) => println!("Registry cleared successfully"),
-    //         Ok(false) => println!("Failed to clear registry"),
-    //         Err(e) => println!("Error clearing registry: {}", e),
-    //     }
-    //     return Ok(());
-    // }
-
     // --- Log File Setup ---
     let log_path = format!("verification_log.txt");
     let file = OpenOptions::new()
@@ -433,7 +394,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!("Peer ID: {}", peer_id);
     let public_key_bytes = id_keys.public().to_peer_id().to_base58();
-
+    println!("Public Key Bytes: {}", public_key_bytes);
+    
     let node_principal = Principal::self_authenticating(&public_key_bytes);
 
     println!("Node Principal ID: {}", node_principal);
@@ -519,6 +481,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     } else {
+        println!("Node already registered, skipping registration");
         // Existing node - try to register without OTP
         match register_node(
             &agent,
@@ -703,7 +666,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut metrics_interval = interval(Duration::from_secs(60));
     
     // Network connection check every 10 seconds
-    let mut network_check_interval = interval(Duration::from_secs(10));
+    let _network_check_interval = interval(Duration::from_secs(10));
     
     // Connection retry interval every 15 seconds
     let mut connection_retry_interval = interval(Duration::from_secs(15));
@@ -715,6 +678,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut devices_sync_interval = interval(Duration::from_secs(30));
 
     let network_metrics: Arc<Mutex<NetworkMetrics>> = Arc::new(Mutex::new(NetworkMetrics::default()));
+    
     let metrics_clone = network_metrics.clone();
 
     println!("Node initialized. Waiting for peers and network events.");
@@ -914,21 +878,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                                 println!("Verified data: {:?}", verified_data);
 
-                                // // Get RabbitMQ client
-                                // if let Ok(rabbitmq_client) = RabbitMQClient::get_client().await {
-                                //     // Publish verified data
-                                //     if let Err(e) = rabbitmq_client.publish_verified_data(
-                                //         verified_data,
-                                //         &local_node_initial_config.node.rabbitmq.exchange,
-                                //         &local_node_initial_config.node.rabbitmq.routing_key,
-                                //     ).await {
-                                //         eprintln!("Failed to publish verified data to RabbitMQ: {}", e);
-                                //     } else {
-                                //         println!("Successfully published verified data to RabbitMQ");
-                                //     }
-                                // } else {
-                                //     eprintln!("Failed to get RabbitMQ client");
-                                // }
+                                // Submit verified data to blockchain
+                                if let Err(e) = submit_to_blockchain(&verified_data, &entry.originator_id, &config_devices).await {
+                                    eprintln!("Failed to submit data to blockchain: {}", e);
+                                }
+
+                                // Get RabbitMQ client
+                                if let Ok(rabbitmq_client) = RabbitMQClient::get_client().await {
+                                    // Publish verified data
+                                    if let Err(e) = rabbitmq_client.publish_verified_data(
+                                        verified_data,
+                                        &local_node_initial_config.node.rabbitmq.exchange,
+                                        &local_node_initial_config.node.rabbitmq.routing_key,
+                                    ).await {
+                                        eprintln!("Failed to publish verified data to RabbitMQ: {}", e);
+                                    } else {
+                                        println!("Successfully published verified data to RabbitMQ");
+                                    }
+                                } else {
+                                    eprintln!("Failed to get RabbitMQ client");
+                                }
 
                                 needs_republish = false; // Don't republish if just verified
                             } else if current_sig_count >= 3 {
@@ -979,8 +948,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         println!("Connection closed with peer: {}. Cause: {:?}", peer_id, cause);
                     },
                     SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
-                        // println!("Failed to connect to peer: {:?} - Error: {}", peer_id, error);
-                        
+                        // println!("Failed to connect to peer: {:?} - Error: {}", peer_id, error)
+                        println!("Failed to connect to peer: {:?} - Error: {}", peer_id, error);
                         // Add to failed connections metrics
                         let mut metrics = metrics_clone.lock().unwrap();
                         metrics.failed_connections += 1;
@@ -1012,6 +981,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 }
                             }
                         }
+                        
                     },
                     _ => {}
                 }
@@ -1132,6 +1102,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     sensor_readings: plain_data.sensor_readings,
                     power_readings: plain_data.power_readings,
                     location: plain_data.location,
+                    timestamp: timestamp,
                 };
 
                 let mut store = message_store_clone.lock().unwrap();
@@ -1198,8 +1169,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             
             // Network metrics logging
             _ = metrics_interval.tick() => {
-                let metrics = metrics_clone.lock().unwrap();
+                let mut metrics = metrics_clone.lock().unwrap();
                 let mesh_peers = swarm.behaviour().gossipsub.mesh_peers(&topic.hash()).count();
+                
+                // Add current mesh peer count to the history
+                metrics.mesh_peer_counts.push(mesh_peers);
                 
                 // Calculate average connection duration
                 let avg_connection_duration = if !metrics.connection_durations.is_empty() {
@@ -1215,6 +1189,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     Duration::from_secs(0)
                 };
                 
+                // Calculate average mesh peer count
+                let avg_mesh_peers = if !metrics.mesh_peer_counts.is_empty() {
+                    metrics.mesh_peer_counts.iter().sum::<usize>() / metrics.mesh_peer_counts.len()
+                } else {
+                    0
+                };
+                
                 // Log network metrics
                 println!("\n=== Network Metrics ===");
                 println!("Connection Success Rate: {:.2}%", 
@@ -1222,6 +1203,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 println!("Average Connection Duration: {:?}", avg_connection_duration);
                 println!("Average Message Latency: {:?}", avg_message_latency);
                 println!("Last Heartbeat: {:?}", metrics.last_heartbeat_time);
+                println!("Current Mesh Peers: {}", mesh_peers);
+                println!("Average Mesh Peers: {}", avg_mesh_peers);
                 println!("=====================\n");
             }
             
@@ -1328,6 +1311,92 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
                 println!("[SYNC_TASK] Finished devices.yaml sync operation.");
             }
+        }
+    }
+}
+
+// Function to submit verified data to blockchain
+async fn submit_to_blockchain(
+    verified_data: &VerifiedData, 
+    device_id: &str,
+    config_devices: &Arc<Mutex<Config>>
+) -> Result<(), Box<dyn Error>> {
+    // Initialize blockchain client
+    match BlockchainClient::new().await {
+        Ok(client) => {
+            // Get device configuration to check device type
+            let locked_devices_config = config_devices.lock().unwrap();
+            let device_config = locked_devices_config.get_device_by_peer_id(device_id)
+                .expect("Device configuration not found for device_id");
+
+            // Create a modified copy of power readings based on device type
+            let mut modified_power_readings = verified_data.power_readings.clone();
+            
+            // Adjust power readings based on device type
+            match device_config.device_type.as_str() {
+                "Solar Generator" => {
+                    // For generators, we use power_produced_kwh
+                    // No modification needed as this is already the correct field
+                    println!("Submitting generated power data for Solar Generator");
+                },
+                "Solar Consumer" => {
+                    // For consumers, we use power_consumed_kwh
+                    // Swap the values to use consumed power instead of produced
+                    modified_power_readings.power_produced_kwh = modified_power_readings.power_consumed_kwh;
+                    println!("Submitting consumed power data for Solar Consumer");
+                },
+                _ => {
+                    println!("Unknown device type: {}. Using default power readings.", device_config.device_type);
+                }
+            }
+
+            // Submit the data to blockchain with modified power readings
+            match client.submit_energy_data_batch(
+                device_id,
+                &modified_power_readings,
+                &verified_data.sensor_readings,
+                &verified_data.location
+            ).await {
+                Ok(tx_hash) => {
+                    println!("Successfully submitted data to blockchain. Transaction hash: {}", tx_hash);
+                    
+                    // Start a background task to monitor the batch and process it when ready
+                    let batch_hash = tx_hash;
+                    let blockchain_client = client;
+                    
+                    tokio::spawn(async move {
+                        println!("Started monitoring batch {} for verification period", batch_hash);
+                        // Wait for the batch processing delay (e.g., 10 minutes)
+                        // This delay is configured in the smart contract
+                        tokio::time::sleep(Duration::from_secs(10 * 60)).await;
+                        
+                        // Check if the batch is ready to be processed
+                        match blockchain_client.is_batch_processable(batch_hash).await {
+                            Ok(true) => {
+                                println!("Batch {} is ready for processing", batch_hash);
+                                match blockchain_client.process_batch(batch_hash).await {
+                                    Ok(receipt) => println!("Batch processed successfully: tx={}", receipt.transaction_hash),
+                                    Err(e) => eprintln!("Failed to process batch: {}", e),
+                                }
+                            },
+                            Ok(false) => println!("Batch {} is not ready for processing yet", batch_hash),
+                            Err(e) => eprintln!("Error checking batch status: {}", e),
+                        }
+                    });
+                    
+                    Ok(())
+                },
+                Err(e) => {
+                    // Convert anyhow::Error to std::error::Error
+                    let err_string = format!("Blockchain error: {}", e);
+                    Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, err_string)))
+                }
+            }
+        },
+        Err(e) => {
+            // Convert anyhow::Error to std::error::Error
+            let err_string = format!("Blockchain client initialization error: {}", e);
+            Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, err_string)))
         }
     }
 }
