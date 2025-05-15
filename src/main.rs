@@ -14,13 +14,11 @@ use hex;
 use serde_json;
 use chrono::Utc; // Add chrono for timestamps
 use std::time::Instant; // Import Instant for duration checking if needed later
-use rand::Rng;
 use std::fs;
 use power_logger::gps::{Location, Country};
-use power_logger::config::{Config, NodeConfig};
+use power_logger::config::{Config};
 use power_logger::sensors::SensorReadings;
 use power_logger::power::PowerReadings;
-use power_logger::crypto::{Crypto, EncryptedData, CryptoError};
 use power_logger::messaging::{RabbitMQClient, VerifiedData};
 use anyhow::Result;
 
@@ -240,16 +238,6 @@ fn load_principal_id() -> Result<Option<Principal>, Box<dyn Error>> {
     Ok(Some(principal))
 }
 
-fn sign_message(message: &[u8], keypair: &identity::Keypair) -> Vec<u8> {
-    keypair.sign(message).expect("Failed to sign message")
-}
-
-fn verify_signature(message: &[u8], signature: &[u8], public_key: &[u8]) -> Result<bool, Box<dyn Error>> {
-    let mut key_bytes = public_key.to_vec();
-    let keypair = identity::Keypair::ed25519_from_bytes(&mut key_bytes)?;
-    let public_key = keypair.public();
-    Ok(public_key.verify(message, signature))
-}
 
 async fn get_public_ip() -> Result<String, Box<dyn Error>> {
     // Try to get public IP from environment first
@@ -267,16 +255,6 @@ async fn get_public_ip() -> Result<String, Box<dyn Error>> {
     Ok(ip)
 }
 
-async fn clear_registry(agent: &Agent, canister_id: &Principal) -> Result<bool, Box<dyn Error>> {
-    let response = agent
-        .update(canister_id, "clear_registry")
-        .with_arg(candid::encode_args(())?)
-        .call_and_wait()
-        .await?;
-
-    let result: bool = candid::decode_one(&response)?;
-    Ok(result)
-}
 fn save_private_key(keypair: &identity::Keypair) -> Result<(), Box<dyn Error>> {
     let bytes = keypair.to_protobuf_encoding()?;
     fs::write("node_private_key.bin", bytes)?;
@@ -394,21 +372,11 @@ impl PowerData {
         }
     }
 
-    pub fn is_location_valid(&self) -> bool {
-        self.location.is_valid()
-    }
-
-    pub fn is_within_radius(&self, other_location: &Location, radius_meters: f64) -> bool {
-        self.location.is_within_radius(other_location, radius_meters)
-    }
-
-    pub fn is_same_country(&self, other: &PowerData) -> bool {
-        self.location.is_same_country(&other.location)
-    }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+
     // Load initial configurations
     let (local_node_initial_config, initial_devices_config_val) = load_config().expect("Failed to load initial main config");
     let config_devices: Arc<Mutex<Config>> = Arc::new(Mutex::new(initial_devices_config_val));
@@ -653,7 +621,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             // Set a custom gossipsub configuration
             let gossipsub_config = gossipsub::ConfigBuilder::default()
-                .heartbeat_interval(Duration::from_secs(10)) // This is set to aid debugging by not cluttering the log space
+                .heartbeat_interval(Duration::from_secs(30)) // This is set to aid debugging by not cluttering the log space
                 .validation_mode(gossipsub::ValidationMode::Strict) // This sets the kind of message validation. The default is Strict (enforce message
                 // signing)
                 .message_id_fn(message_id_fn) // content-address messages. No two messages of the same content will be propagated.
@@ -729,7 +697,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut signing_request_interval = interval(Duration::from_secs(60)); 
     
     // Retry publishing failed messages every 30 seconds
-    let mut retry_publish_interval = interval(Duration::from_secs(30));
+    let mut retry_publish_interval = interval(Duration::from_secs(60));
     
     // Network metrics logging every minute
     let mut metrics_interval = interval(Duration::from_secs(60));
@@ -744,7 +712,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut pre_verification_connection_interval = interval(Duration::from_secs(595));
 
     // Interval for periodically syncing devices.yaml from the canister (e.g., every 10 minutes)
-    let mut devices_sync_interval = interval(Duration::from_secs(600));
+    let mut devices_sync_interval = interval(Duration::from_secs(30));
 
     let network_metrics: Arc<Mutex<NetworkMetrics>> = Arc::new(Mutex::new(NetworkMetrics::default()));
     let metrics_clone = network_metrics.clone();
@@ -764,10 +732,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let canister_id_for_sync = canister_id; // Principal is Copy
     let config_devices_for_sync = config_devices.clone(); 
 
-    // Initialize crypto with a secure key (still needed for API compatibility)
-    let mut key = [0u8; 32];
-    rand::thread_rng().fill(&mut key);
-    let _crypto = Crypto::new(key);
 
     // Get device ID from command-line arguments or use default
     let args: Vec<String> = env::args().collect();
@@ -948,21 +912,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     verification_count: current_sig_count as i32,
                                 };
 
-                                // Get RabbitMQ client
-                                if let Ok(rabbitmq_client) = RabbitMQClient::get_client().await {
-                                    // Publish verified data
-                                    if let Err(e) = rabbitmq_client.publish_verified_data(
-                                        verified_data,
-                                        &local_node_initial_config.node.rabbitmq.exchange,
-                                        &local_node_initial_config.node.rabbitmq.routing_key,
-                                    ).await {
-                                        eprintln!("Failed to publish verified data to RabbitMQ: {}", e);
-                                    } else {
-                                        println!("Successfully published verified data to RabbitMQ");
-                                    }
-                                } else {
-                                    eprintln!("Failed to get RabbitMQ client");
-                                }
+                                println!("Verified data: {:?}", verified_data);
+
+                                // // Get RabbitMQ client
+                                // if let Ok(rabbitmq_client) = RabbitMQClient::get_client().await {
+                                //     // Publish verified data
+                                //     if let Err(e) = rabbitmq_client.publish_verified_data(
+                                //         verified_data,
+                                //         &local_node_initial_config.node.rabbitmq.exchange,
+                                //         &local_node_initial_config.node.rabbitmq.routing_key,
+                                //     ).await {
+                                //         eprintln!("Failed to publish verified data to RabbitMQ: {}", e);
+                                //     } else {
+                                //         println!("Successfully published verified data to RabbitMQ");
+                                //     }
+                                // } else {
+                                //     eprintln!("Failed to get RabbitMQ client");
+                                // }
 
                                 needs_republish = false; // Don't republish if just verified
                             } else if current_sig_count >= 3 {
@@ -1330,22 +1296,37 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             // Periodic devices.yaml sync
             _ = devices_sync_interval.tick() => {
-                println!("Periodic sync: Checking for devices.yaml updates from canister...");
-                let agent_clone = agent_for_sync.clone();
-                let config_devices_clone = config_devices_for_sync.clone();
-                // canister_id_for_sync is Copy, so it can be used directly
-
-                tokio::spawn(async move {
-                    match devices_yaml::fetch_and_save_devices_yaml(&agent_clone, &canister_id_for_sync).await {
-                        Ok(_) => {
-                            println!("Periodic sync: devices.yaml fetched and saved successfully.");
-                            reload_devices_config_in_memory(&config_devices_clone).await;
-                        }
-                        Err(e) => {
-                            eprintln!("Periodic sync: Error fetching or saving devices.yaml: {}", e);
+                println!("[SYNC_TASK] Starting devices.yaml sync operation. Current thread: {:?}", std::thread::current().id());
+                // Use the existing agent_for_sync, canister_id_for_sync, and config_devices_for_sync
+                match devices_yaml::fetch_and_save_devices_yaml(&agent_for_sync, &canister_id_for_sync).await {
+                    Ok(_) => {
+                        println!("[SYNC_TASK] Periodic sync: devices.yaml fetched and saved successfully.");
+                        
+                        println!("[SYNC_TASK] Attempting to reload devices.yaml into memory (blocking file I/O). Thread: {:?}", std::thread::current().id());
+                        // Directly perform the reload logic. This part is blocking for file I/O.
+                        match File::open("devices.yaml") { // std::fs::File, blocking
+                            Ok(file) => {
+                                match serde_yaml::from_reader::<_, Config>(file) { // blocking
+                                    Ok(new_devices_config) => {
+                                        let mut guard = config_devices_for_sync.lock().unwrap(); // Use the existing Arc<Mutex<Config>>
+                                        *guard = new_devices_config;
+                                        println!("[SYNC_TASK] In-memory devices_config reloaded successfully.");
+                                    }
+                                    Err(e) => {
+                                        eprintln!("[SYNC_TASK] Failed to parse updated devices.yaml for reloading: {}", e);
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("[SYNC_TASK] Failed to open updated devices.yaml for reloading: {}", e);
+                            }
                         }
                     }
-                });
+                    Err(e) => {
+                        eprintln!("[SYNC_TASK] Error during periodic sync (fetch_and_save_devices_yaml): {}", e);
+                    }
+                }
+                println!("[SYNC_TASK] Finished devices.yaml sync operation.");
             }
         }
     }

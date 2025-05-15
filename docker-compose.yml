@@ -13,6 +13,7 @@ services:
       - ./script:/app/script:ro
     environment:
       - IC_URL=http://localhost:4943
+
     network_mode: host
     command: /bin/sh -c "echo 'Bootstrap image built successfully'"
 
@@ -31,6 +32,7 @@ services:
       - NODE_ID=1
       - NODE_NAME=PowerNode1
       - RUST_LOG=info
+      - RUST_BACKTRACE=1
       - IC_URL=http://localhost:4943
     network_mode: host
     depends_on:
@@ -51,6 +53,7 @@ services:
       - NODE_ID=2
       - NODE_NAME=PowerNode2
       - RUST_LOG=info
+      - RUST_BACKTRACE=1
       - IC_URL=http://localhost:4943
     network_mode: host
     depends_on:
@@ -71,6 +74,7 @@ services:
       - NODE_ID=3
       - NODE_NAME=PowerNode3
       - RUST_LOG=info
+      - RUST_BACKTRACE=1
       - IC_URL=http://localhost:4943
     network_mode: host
     depends_on:
@@ -91,6 +95,7 @@ services:
       - NODE_ID=4
       - NODE_NAME=PowerNode4
       - RUST_LOG=info
+      - RUST_BACKTRACE=1
       - IC_URL=http://localhost:4943
     network_mode: host
     depends_on:
@@ -111,6 +116,7 @@ services:
       - NODE_ID=5
       - NODE_NAME=PowerNode5
       - RUST_LOG=info
+      - RUST_BACKTRACE=1
       - IC_URL=http://localhost:4943
     network_mode: host
     depends_on:
