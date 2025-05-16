@@ -2,7 +2,6 @@ use lapin::{Connection, ConnectionProperties};
 use tokio::sync::OnceCell;
 use std::sync::Arc;
 use anyhow::Result;
-use tokio::runtime::Runtime;
 use crate::sensors::SensorReadings;
 use crate::power::PowerReadings;
 use crate::gps::Location;
@@ -39,14 +38,10 @@ pub struct Country {
 
 pub struct RabbitMQClient {
     connection: Connection,
-    runtime: Runtime,
 }
-
-static RABBITMQ_CLIENT: OnceCell<Arc<RabbitMQClient>> = OnceCell::const_new();
 
 impl RabbitMQClient {
     pub async fn get_client() -> Result<Self> {
-        let runtime = Runtime::new()?;
         let connection = Connection::connect(
             "amqp://guest:guest@localhost:5672",
             ConnectionProperties::default(),
@@ -54,7 +49,6 @@ impl RabbitMQClient {
 
         Ok(Self {
             connection,
-            runtime,
         })
     }
 

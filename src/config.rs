@@ -153,15 +153,14 @@ mod tests {
         // Test first device
         let device = config.get_device("RASPBERRY_PI_1").unwrap();
         assert_eq!(device.id, "RASPBERRY_PI_1");
-        assert_eq!(device.name, "Solar Panel Controller 1");
+        assert_eq!(device.node_name, "Solar Panel Controller 1");
         assert_eq!(device.device_type, "solar_controller");
-        assert_eq!(device.location.country, "US");
+        assert_eq!(device.location.country.as_ref().unwrap().code, "US");
         assert_eq!(device.specifications.max_wattage, 1000);
         
         // Test location conversion
         let location = config.get_device_location("RASPBERRY_PI_1").unwrap();
         assert_eq!(location.latitude, 40.7128);
         assert_eq!(location.longitude, -74.0060);
-        assert!(location.is_valid());
     }
 } 

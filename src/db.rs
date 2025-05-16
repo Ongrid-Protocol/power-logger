@@ -1,11 +1,7 @@
-use sqlx::{postgres::PgPoolOptions, PgPool, Error};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use chrono::Utc;
-use std::time::{SystemTime, UNIX_EPOCH};
 use anyhow::Result;
-use deadpool_postgres::{Config, Manager, Pool, Runtime};
-use tokio_postgres::NoTls;
+use deadpool_postgres::{Manager, Pool, Runtime};
+use tokio_postgres::{NoTls, Config as PgConfig};
 use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -72,21 +68,23 @@ pub struct Database {
 
 impl Database {
     pub async fn new() -> Result<Self> {
-        let mut cfg = Config::new();
-        cfg.host = Some(env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string()));
-        cfg.port = Some(env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".to_string()).parse()?);
-        cfg.dbname = Some(env::var("POSTGRES_DB").unwrap_or_else(|_| "power_logger".to_string()));
-        cfg.user = Some(env::var("POSTGRES_USER").unwrap_or_else(|_| "power_logger_user".to_string()));
-        cfg.password = Some(env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "".to_string()));
+        let mut cfg = PgConfig::new();
+        cfg.host(env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string()));
+        cfg.port(env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".to_string()).parse()?);
+        cfg.dbname(env::var("POSTGRES_DB").unwrap_or_else(|_| "power_logger".to_string()));
+        cfg.user(env::var("POSTGRES_USER").unwrap_or_else(|_| "power_logger_user".to_string()));
+        cfg.password(env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "".to_string()));
 
         let mgr = Manager::new(cfg, NoTls);
-        let pool = Pool::new(mgr, Runtime::Tokio1)?;
+        let pool = Pool::builder(mgr)
+            .runtime(Runtime::Tokio1)
+            .build()?;
 
         Ok(Self { pool })
     }
 
     pub async fn store_message(&self, message: &Message) -> Result<()> {
-        let client = self.pool.get().await?;
+        let mut client = self.pool.get().await?;
         
         // Start a transaction
         let transaction = client.transaction().await?;
@@ -149,7 +147,7 @@ impl Database {
     }
 
     pub async fn save_verified_data(&self, data: &VerifiedData) -> Result<()> {
-        let client = self.pool.get().await?;
+        let mut client = self.pool.get().await?;
         
         // Start a transaction
         let transaction = client.transaction().await?;

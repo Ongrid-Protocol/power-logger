@@ -3,7 +3,8 @@ use std::fs;
 use ic_agent::Agent;
 use candid::Principal;
 use serde_yaml;
-use power_logger::config::Config;
+use crate::config::Config;
+
 
 /// Fetches the devices.yaml content from the canister
 pub async fn fetch_devices_yaml(agent: &Agent, canister_id: &Principal) -> Result<String, Box<dyn Error + Send + Sync>> {

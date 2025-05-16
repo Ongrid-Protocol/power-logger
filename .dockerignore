@@ -17,4 +17,28 @@ tmp/
 node_modules/
 
 # Don't exclude built binaries
-!target/release/power-logger 
+!target/release/power-logger
+
+# Git files
+.git
+.gitignore
+
+# Rust build artifacts
+target/
+**/target/
+
+# IDE and editor specific files
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# Local environment files (if any, besides .env which IS copied if present in context)
+# .env.local
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Any other files or directories not needed for the build 

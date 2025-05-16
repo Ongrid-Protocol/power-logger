@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Bootstrap service for generating node keys and principals
   bootstrap:
@@ -28,6 +26,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node1/data:/app/data
       - ./nodes/node1/logs:/app/logs
+      - ./nodes/node1/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node1/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=1
       - NODE_NAME=PowerNode1
@@ -49,6 +49,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node2/data:/app/data
       - ./nodes/node2/logs:/app/logs
+      - ./nodes/node2/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node2/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=2
       - NODE_NAME=PowerNode2
@@ -70,6 +72,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node3/data:/app/data
       - ./nodes/node3/logs:/app/logs
+      - ./nodes/node3/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node3/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=3
       - NODE_NAME=PowerNode3
@@ -91,6 +95,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node4/data:/app/data
       - ./nodes/node4/logs:/app/logs
+      - ./nodes/node4/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node4/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=4
       - NODE_NAME=PowerNode4
@@ -112,6 +118,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node5/data:/app/data
       - ./nodes/node5/logs:/app/logs
+      - ./nodes/node5/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node5/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=5
       - NODE_NAME=PowerNode5
@@ -133,6 +141,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node6/data:/app/data
       - ./nodes/node6/logs:/app/logs
+      - ./nodes/node6/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node6/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=6
       - NODE_NAME=PowerNode6
@@ -153,6 +163,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node7/data:/app/data
       - ./nodes/node7/logs:/app/logs
+      - ./nodes/node7/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node7/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=7
       - NODE_NAME=PowerNode7
@@ -173,6 +185,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node8/data:/app/data
       - ./nodes/node8/logs:/app/logs
+      - ./nodes/node8/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node8/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=8
       - NODE_NAME=PowerNode8
@@ -193,6 +207,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node9/data:/app/data
       - ./nodes/node9/logs:/app/logs
+      - ./nodes/node9/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node9/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=9
       - NODE_NAME=PowerNode9
@@ -213,6 +229,8 @@ services:
       - ./devices.yaml:/app/devices.yaml:ro
       - ./nodes/node10/data:/app/data
       - ./nodes/node10/logs:/app/logs
+      - ./nodes/node10/node_private_key.bin:/app/node_private_key.bin
+      - ./nodes/node10/node_principal.txt:/app/node_principal.txt
     environment:
       - NODE_ID=10
       - NODE_NAME=PowerNode10

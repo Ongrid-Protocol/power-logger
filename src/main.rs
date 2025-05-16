@@ -21,13 +21,11 @@ use power_logger::sensors::SensorReadings;
 use power_logger::power::PowerReadings;
 use power_logger::messaging::{RabbitMQClient, VerifiedData};
 use power_logger::blockchain::BlockchainClient;
+use power_logger::devices_yaml;
 use anyhow::Result;
 
-// Add our new module
-mod devices_yaml;
-
 // Define the minimum number of nodes required for verification
-const MIN_NODES_FOR_VERIFICATION: usize = 5;
+const MIN_NODES_FOR_VERIFICATION: usize = 3;
 
 // Define the structure for signed messages
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -176,7 +174,6 @@ async fn fetch_peer_nodes(agent: &Agent, config: &NodeSettings) -> Result<Vec<St
         .await?;
 
     let nodes: Vec<Node> = candid::decode_one(&response)?;
-    // println!("Fetched nodes from canister: {:?}", nodes);
     
     Ok(nodes.into_iter()
         .map(|node| node.multiaddress)
@@ -279,33 +276,25 @@ fn test_connectivity(target_ip: &str) -> bool {
 }
 
 impl PowerData {
-    fn new_plain(device_id_str: &str, current_devices_config: &Config) -> Self {
+    fn new_plain(peer_id: &str, current_devices_config: &Config) -> Result<Self, Box<dyn Error>> {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
             .as_secs();
     
-        // Use the passed current_devices_config for device lookup
-        let device_config_for_power = match current_devices_config.get_device_by_peer_id(device_id_str) {
-            Some(config) => config,
-            None => {
-                println!("Warning: Device with peer_id {} not found in provided devices configuration. Using first device as fallback.", device_id_str);
-                // This fallback could panic if current_devices_config.devices is empty.
-                // A more robust solution would be to ensure devices list is never empty or handle this case.
-                &current_devices_config.devices[0] 
-            }
-        };
+        // Get device configuration
+        let device_config = current_devices_config.get_device_by_peer_id(peer_id)
+            .ok_or_else(|| format!("Device with peer_id {} not found in configuration", peer_id))?;
         
-        // Use the passed current_devices_config for location lookup
-        let location_from_config: Location = match current_devices_config.get_device_location(device_id_str) {
-            Some(loc_ref) => loc_ref.clone(), // Clone to get an owned Location
-            None => {
-                println!("Warning: Location not found for device peer_id {}, using default location.", device_id_str);
-                // Construct a default Location, ensuring timestamp is current
+        // Get location from device configuration
+        let location = current_devices_config.get_device_location(peer_id)
+            .map(|loc| loc.clone())
+            .unwrap_or_else(|| {
+                println!("Warning: Using default location for device {}", peer_id);
                 Location {
                     latitude: 37.7749,
                     longitude: -122.4194,
-                    timestamp, // Use the current PowerData timestamp
+                    timestamp,
                     accuracy: 5.0,
                     satellites: 8,
                     altitude: 0.0,
@@ -315,47 +304,54 @@ impl PowerData {
                         region: "North America".to_string(),
                     }),
                 }
-            }
-        };
+            });
         
-        // Create the final Location struct, ensuring its timestamp is the main PowerData timestamp
-        let location = Location {
-            latitude: location_from_config.latitude,
-            longitude: location_from_config.longitude,
-            timestamp, // Ensure this is the primary timestamp for the data record
-            accuracy: location_from_config.accuracy,
-            satellites: location_from_config.satellites,
-            altitude: location_from_config.altitude,
-            country: location_from_config.country.clone(),
-        };
-    
-        // Load LocalConfig settings from config.yaml specifically for RabbitMQ and Sensors.
-        // This is a targeted load to avoid broader changes to PowerData::new_plain signature for now.
-        let local_config_settings: LocalConfig = {
-            let file = File::open("config.yaml")
-                .expect("PowerData::new_plain: Failed to open config.yaml for LocalConfig");
-            serde_yaml::from_reader(file)
-                .expect("PowerData::new_plain: Failed to parse LocalConfig from config.yaml")
-        };
+        // Load LocalConfig settings for RabbitMQ and Sensors
+        let local_config_settings: LocalConfig = File::open("config.yaml")
+            .map_err(|e| format!("Failed to open config.yaml: {}", e))
+            .and_then(|file| {
+                serde_yaml::from_reader(file)
+                    .map_err(|e| format!("Failed to parse config.yaml: {}", e))
+            })?;
         
-        let node_config_for_sensors = power_logger::config::NodeConfig {
+        let node_config = power_logger::config::NodeConfig {
             rabbitmq: local_config_settings.node.rabbitmq.clone(),
             sensors: local_config_settings.node.sensors.clone(),
         };
         
-        let sensor_readings = SensorReadings::new(&node_config_for_sensors);
-        // Pass device_config_for_power (derived from current_devices_config) to PowerReadings
-        let power_readings = PowerReadings::new_with_sensors(device_config_for_power, &sensor_readings);
+        // Create sensor and power readings
+        let sensor_readings = SensorReadings::new(&node_config);
+        let power_readings = PowerReadings::new_with_sensors(device_config, &sensor_readings);
     
-        Self {
+        Ok(Self {
             timestamp,
             sensor_readings,
             power_readings,
-            device_id: device_id_str.to_string(), // Use the passed peer_id string as device_id
+            device_id: peer_id.to_string(),
             location,
+        })
+    }
+}
+
+// Helper function to reload devices.yaml into the Arc<Mutex<Config>>
+async fn reload_devices_config_in_memory(config_devices_mutex: &Arc<Mutex<Config>>) {
+    match File::open("devices.yaml") {
+        Ok(file) => {
+            match serde_yaml::from_reader::<_, Config>(file) {
+                Ok(new_devices_config) => {
+                    let mut guard = config_devices_mutex.lock().unwrap();
+                    *guard = new_devices_config;
+                    println!("In-memory devices_config reloaded successfully.");
+                }
+                Err(e) => {
+                    eprintln!("Failed to parse updated devices.yaml for reloading: {}", e);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to open updated devices.yaml for reloading: {}", e);
         }
     }
-
 }
 
 #[tokio::main]
@@ -378,7 +374,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .append(true)
         .open(&log_path)?;
     let log_file: LogFile = Arc::new(Mutex::new(file));
-    println!("Logging verification events to: {}", log_path);
     // --- End Log File Setup ---
 
     // Load or generate Keypair
@@ -393,13 +388,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let peer_id_str = peer_id.to_string();
 
     println!("Peer ID: {}", peer_id);
-    let public_key_bytes = id_keys.public().to_peer_id().to_base58();
-    println!("Public Key Bytes: {}", public_key_bytes);
-    
+    let public_key_bytes = id_keys.public().to_peer_id().to_base58();    
     let node_principal = Principal::self_authenticating(&public_key_bytes);
-
-    println!("Node Principal ID: {}", node_principal);
-
     let message_store: MessageStore = Arc::new(Mutex::new(HashMap::new()));
     let verification_counter: VerificationCounter = Arc::new(Mutex::new(0));
     let failed_publish_queue: FailedPublishQueue = Arc::new(Mutex::new(VecDeque::new()));
@@ -422,12 +412,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let canister_id = Principal::from_text(&local_node_initial_config.node.ic.canister_id)?;
-    println!("Canister ID: {}", canister_id);
-
     // Get the public IP address
     let public_ip = get_public_ip().await?;
     let public_multiaddr = format!("/ip4/{}/tcp/{}/p2p/{}", public_ip, local_node_initial_config.node.port, peer_id);
-    println!("Using public multiaddress for registration/heartbeat: {}", public_multiaddr);
 
     // Check if this is a new node (no private key file existed)
     if !Path::new("node_private_key.bin").exists() {
@@ -458,31 +445,114 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 Ok(response) => {
                     if response.success {
                         println!("Successfully registered node with canister using OTP");
-                        println!("Assigned Principal ID: {}", response.node_principal);
                         if let Err(e) = save_principal_id(&response.node_principal) {
                             println!("Failed to save principal ID: {}", e);
                         }
                         save_private_key(&id_keys)?;
 
-                        // After successful OTP registration:
+                        // After successful OTP registration, fetch/update devices.yaml
                         if let Err(e) = devices_yaml::fetch_and_save_devices_yaml(&agent, &canister_id).await {
-                            println!("Error updating devices.yaml: {}", e);
+                            println!("Error updating devices.yaml from canister: {}", e);
+                            println!("WARNING: Proceeding with potentially stale or missing device information for blockchain registration.");
                         } else {
                             reload_devices_config_in_memory(&config_devices).await;
+                            println!("devices.yaml fetched from canister and reloaded into memory.");
                         }
-                        registration_success = true;
-                    } else {
-                        println!("Failed to register node with canister. Invalid OTP. Please try again.");
+
+                        // Retrieve operator wallet address for the current node from the updated devices.yaml
+                        let operator_wallet_address = {
+                            let locked_devices_config = config_devices.lock().unwrap();
+                            locked_devices_config.get_device_by_peer_id(&peer_id_str)
+                                .map(|device| device.wallet_address.clone())
+                                .unwrap_or_else(|| {
+                                    println!("WARNING: Could not find Peer ID {} in the updated devices.yaml to retrieve its operator wallet address.", peer_id_str);
+                                    println!("Blockchain registration might require manual wallet input later or may fail if the address is needed by the contract.");
+                                    "WALLET_ADDRESS_NOT_FOUND_IN_DEVICES_YAML".to_string()
+                                })
+                        };
+
+                        println!("\n--- Node Details for Blockchain Registration ---");
+                        println!("Current Node Peer ID: {}", peer_id_str);
+                        println!("Retrieved Operator Wallet Address (from devices.yaml): {}", operator_wallet_address);
+                        println!("----------------------------------------------\n");
+
+                        println!("The next step is to register this node (Peer ID: {}) with the blockchain.", peer_id_str);
+                        println!("This typically uses the operator wallet address ({}) associated with it in the devices.yaml file provided by the canister.", operator_wallet_address);
+                        println!("Do you want to proceed with registering this node on the blockchain? (yes/no):");
+                        
+                        let mut proceed_with_blockchain_reg_input = String::new();
+                        std::io::stdin().read_line(&mut proceed_with_blockchain_reg_input)?;
+                        
+                        if proceed_with_blockchain_reg_input.trim().to_lowercase() == "yes" {
+                            match BlockchainClient::new().await {
+                                Ok(blockchain_client) => {
+                                    println!("Attempting to register node {} on the blockchain...", peer_id_str);
+                                    match blockchain_client.register_node(&peer_id_str).await {
+                                        Ok(tx_hash) => {
+                                            println!("Blockchain node registration transaction submitted successfully.");
+                                            println!("Transaction Hash: {}", tx_hash);
+                                            
+                                            let mut blockchain_confirmed_by_user = false;
+                                            while !blockchain_confirmed_by_user {
+                                                println!("\nPlease monitor the transaction (Hash: {}) on a blockchain explorer.", tx_hash);
+                                                println!("Has the node registration (Peer ID: {}) been confirmed on the blockchain? (yes/no/skip):", peer_id_str);
+                                                let mut confirmation_input = String::new();
+                                                std::io::stdin().read_line(&mut confirmation_input)?;
+                                                match confirmation_input.trim().to_lowercase().as_str() {
+                                                    "yes" => {
+                                                        println!("Blockchain registration confirmed by user for Peer ID {}.", peer_id_str);
+                                                        blockchain_confirmed_by_user = true;
+                                                        registration_success = true; // Overall new node setup process successful
+                                                    }
+                                                    "no" => {
+                                                        println!("Please continue to monitor the transaction. Confirm once it's processed on the blockchain.");
+                                                    }
+                                                    "skip" => {
+                                                        println!("Skipping blockchain registration confirmation by user request for Peer ID {}.", peer_id_str);
+                                                        println!("Node setup will proceed. Ensure the node is registered on the blockchain manually if issues arise with blockchain-related features.");
+                                                        blockchain_confirmed_by_user = true;
+                                                        registration_success = true; // Overall new node setup successful (with skipped confirmation)
+                                                    }
+                                                    _ => {
+                                                        println!("Invalid input. Please enter 'yes', 'no', or 'skip'.");
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        Err(e) => {
+                                            println!("Error during blockchain node registration for Peer ID {}: {}", peer_id_str, e);
+                                            println!("Node registration on the blockchain failed. You may need to retry or register manually via other means.");
+                                            // registration_success remains false, OTP loop will continue or user can exit.
+                                        }
+                                    }
+                                    // Granting submitter role is removed as per user request.
+                                },
+                                Err(e) => {
+                                    println!("Failed to initialize Blockchain client: {}", e);
+                                    println!("Skipping blockchain registration steps for Peer ID {}.", peer_id_str);
+                                    println!("Node setup will proceed. The node is registered with the canister but NOT the blockchain. Blockchain-related features will be unavailable.");
+                                    registration_success = true; // OTP part done, proceed without blockchain.
+                                }
+                            }
+                        } else {
+                            println!("Blockchain registration for Peer ID {} was cancelled by the user.", peer_id_str);
+                            println!("Node setup will proceed. The node is registered with the canister but NOT the blockchain.");
+                            registration_success = true; // OTP part done, user chose to skip blockchain for now.
+                        }
+                    } else { // OTP registration with canister failed
+                        println!("Failed to register node with canister. Invalid OTP or other issue. Please try again.");
+                        // registration_success remains false, OTP loop continues.
                     }
                 }
                 Err(e) => {
-                    println!("Error registering node: {}. Please try again.", e);
+                    println!("Error during canister registration call: {}. Please try again.", e);
+                    // registration_success remains false, OTP loop continues.
                 }
             }
         }
-    } else {
-        println!("Node already registered, skipping registration");
-        // Existing node - try to register without OTP
+    } else { // Node already has a private key, existing node flow
+        println!("Node already registered, skipping OTP registration flow.");
+        // Existing node - try to register with canister (heartbeat/re-affirm) without OTP
         match register_node(
             &agent,
             &canister_id,
@@ -517,7 +587,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let fetched_nodes = fetch_peer_nodes(&agent, &local_node_initial_config.node).await?;
-    // println!("Fetched Peer Nodes from canister: {:?}", fetched_nodes);
 
     let active_nodes: Vec<String> = fetched_nodes
         .into_iter()
@@ -529,7 +598,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     }
                 }
             }
-            println!("Discarding own address or invalid address: {}", addr_str);
             false
         })
         .collect();
@@ -696,52 +764,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let canister_id_for_sync = canister_id; // Principal is Copy
     let config_devices_for_sync = config_devices.clone(); 
 
-
-    // Get device ID from command-line arguments or use default
-    let args: Vec<String> = env::args().collect();
-    let device_id = if args.len() > 1 {
-        args[1].as_str()
-    } else {
-        "SG7392A15F" // Default to "Solar Generator North America 1"
-    };
-
-    // Helper function to reload devices.yaml into the Arc<Mutex<Config>>
-    async fn reload_devices_config_in_memory(config_devices_mutex: &Arc<Mutex<Config>>) {
-        println!("Attempting to reload devices.yaml into memory...");
-        match File::open("devices.yaml") {
-            Ok(file) => {
-                match serde_yaml::from_reader::<_, Config>(file) {
-                    Ok(new_devices_config) => {
-                        let mut guard = config_devices_mutex.lock().unwrap();
-                        *guard = new_devices_config;
-                        println!("In-memory devices_config reloaded successfully.");
-                    }
-                    Err(e) => {
-                        eprintln!("Failed to parse updated devices.yaml for reloading: {}", e);
-                    }
-                }
-            }
-            Err(e) => {
-                eprintln!("Failed to open updated devices.yaml for reloading: {}", e);
-            }
-        }
-    }
-
     loop {
         tokio::select! {
             event = swarm.select_next_some() => {
                 match event {
                     SwarmEvent::NewListenAddr { address, .. } => {
                         println!("\nNode Information:");
-                        println!("PeerId: {}", local_peer_id);
                         println!("Listening on: {}", address);
                         println!("Public Multiaddr: {}", public_multiaddr);
                     },
                     SwarmEvent::ConnectionEstablished { peer_id, endpoint, .. } => {
                         println!("Connection established with peer: {}", peer_id);
-                        println!("Connected via: {}", endpoint.get_remote_address());
                         swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer_id);
-
                         let mut metrics = metrics_clone.lock().unwrap();
                         metrics.successful_connections += 1;
                         metrics.connection_attempts += 1;
@@ -753,7 +787,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             println!("Discovered peer {} at {}", peer_id, multiaddr);
                             // Verify the multiaddr is reachable
                             if !multiaddr.to_string().contains("127.0.0.1") { // Filter out loopback
-                                println!("Attempting to dial {}", peer_id);
                                 if let Err(e) = swarm.dial(multiaddr.clone()) {
                                     println!("Failed to dial peer {}: {}", peer_id, e);
                                 }
@@ -778,14 +811,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         let local_peer_id_str = local_peer_id.to_string(); // Get local peer id as string
 
                         if let Ok(received_message) = serde_json::from_slice::<SignedMessage>(&message.data) {
-                            // println!("Received SignedMessage: Hash {} from Peer {}", received_message.message_hash, propagation_source); // Keep for debugging if needed
+                            println!("[Gossipsub] Received SignedMessage: Hash {} from Peer {}. Payload Signatures: {:?}", 
+                                received_message.message_hash, propagation_source, received_message.signatures);
 
                             let mut store = message_store_clone.lock().unwrap();
                             let message_hash = received_message.message_hash.clone();
+                            
+                            // Log signatures already in store for this hash BEFORE update
+                            if let Some(existing_msg) = store.get(&message_hash) {
+                                println!("[Gossipsub] Signatures for hash {} BEFORE update: {:?}", message_hash, existing_msg.signatures);
+                            }
                             let initial_sig_count_before_update = store.get(&message_hash).map_or(0, |m| m.signatures.len());
 
                             let entry = store.entry(message_hash.clone()).or_insert_with(|| {
-                                // println!("Adding new message entry for hash: {}", message_hash); // Keep for debugging if needed
+                                println!("[Gossipsub] Adding new message entry for hash: {}", message_hash); // Keep for debugging if needed
                                 received_message.clone()
                             });
 
@@ -808,6 +847,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             }
 
                             let current_sig_count = entry.signatures.len();
+                            println!("[Gossipsub] Signatures for hash {} AFTER update: {:?}. Initial count: {}, Current count: {}", 
+                                message_hash, entry.signatures, initial_sig_count_before_update, current_sig_count);
+
                             let signatures_added_str = signatures_added_now.iter().cloned().collect::<Vec<_>>().join(",");
 
                             // Log reception and signature processing
@@ -829,7 +871,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             // Check for verification threshold
                             let mut needs_republish = !signatures_added_now.is_empty(); // Republish if any new sig was added
 
-                            if current_sig_count >= 3 && initial_sig_count_before_update < 3 {
+                            if current_sig_count >= MIN_NODES_FOR_VERIFICATION && initial_sig_count_before_update < MIN_NODES_FOR_VERIFICATION {
                                 let mut counter = verification_counter_clone.lock().unwrap();
                                 *counter += 1;
                                 println!("*** MESSAGE VERIFIED ({} signatures): Hash {} (Total Verified: {}) ***", 
@@ -876,36 +918,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     verification_count: current_sig_count as i32,
                                 };
 
-                                println!("Verified data: {:?}", verified_data);
-
                                 // Submit verified data to blockchain
                                 if let Err(e) = submit_to_blockchain(&verified_data, &entry.originator_id, &config_devices).await {
                                     eprintln!("Failed to submit data to blockchain: {}", e);
                                 }
 
-                                // Get RabbitMQ client
-                                if let Ok(rabbitmq_client) = RabbitMQClient::get_client().await {
-                                    // Publish verified data
-                                    if let Err(e) = rabbitmq_client.publish_verified_data(
-                                        verified_data,
-                                        &local_node_initial_config.node.rabbitmq.exchange,
-                                        &local_node_initial_config.node.rabbitmq.routing_key,
-                                    ).await {
-                                        eprintln!("Failed to publish verified data to RabbitMQ: {}", e);
-                                    } else {
-                                        println!("Successfully published verified data to RabbitMQ");
-                                    }
-                                } else {
-                                    eprintln!("Failed to get RabbitMQ client");
-                                }
+                                // // Get RabbitMQ client
+                                // if let Ok(rabbitmq_client) = RabbitMQClient::get_client().await {
+                                //     // Publish verified data
+                                //     if let Err(e) = rabbitmq_client.publish_verified_data(
+                                //         verified_data,
+                                //         &local_node_initial_config.node.rabbitmq.exchange,
+                                //         &local_node_initial_config.node.rabbitmq.routing_key,
+                                //     ).await {
+                                //         eprintln!("Failed to publish verified data to RabbitMQ: {}", e);
+                                //     } else {
+                                //         println!("Successfully published verified data to RabbitMQ");
+                                //     }
+                                // } else {
+                                //     eprintln!("Failed to get RabbitMQ client");
+                                // }
 
                                 needs_republish = false; // Don't republish if just verified
-                            } else if current_sig_count >= 3 {
+                            } else if current_sig_count >= MIN_NODES_FOR_VERIFICATION { // Check against MIN_NODES_FOR_VERIFICATION
+                                println!("[Gossipsub] Message {} already has {} (>= threshold) signatures. Not re-triggering verification.", message_hash, current_sig_count);
                                 needs_republish = false; // Already verified, no need to republish
                             }
 
                             if needs_republish {
-                               // println!("Republishing message with updated signatures: Hash {}", message_hash); // Keep for debugging
                                write_log(
                                    &log_file_inner_clone,
                                    format!("MSG_REPUBLISH Node={} Hash={} NewSigCount={}", local_peer_id_str, message_hash, current_sig_count)
@@ -942,14 +982,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         // println!("Ping event: {:?}", event);
                     },
                     SwarmEvent::Dialing { peer_id, connection_id } => {
-                        println!("Dialing peer: {:?} on connection: {:?}", peer_id.map(|p| p.to_string()), connection_id);
+                        // println!("Dialing peer: {:?} on connection: {:?}", peer_id.map(|p| p.to_string()), connection_id);
                     },
                     SwarmEvent::ConnectionClosed { peer_id, cause, .. } => {
-                        println!("Connection closed with peer: {}. Cause: {:?}", peer_id, cause);
+                        // println!("Connection closed with peer: {}. Cause: {:?}", peer_id, cause);
                     },
                     SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
                         // println!("Failed to connect to peer: {:?} - Error: {}", peer_id, error)
-                        println!("Failed to connect to peer: {:?} - Error: {}", peer_id, error);
+                        // println!("Failed to connect to peer: {:?} - Error: {}", peer_id, error);
                         // Add to failed connections metrics
                         let mut metrics = metrics_clone.lock().unwrap();
                         metrics.failed_connections += 1;
@@ -973,7 +1013,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                         let mut retry_list = retry_list_clone.lock().unwrap();
                                         // Check if already in list
                                         if !retry_list.iter().any(|p| p.peer_id == peer_id) {
-                                            println!("Added peer {} to retry list", peer_id);
+                                            // println!("Added peer {} to retry list", peer_id);
                                             retry_list.push(retry_peer);
                                         }
                                     }
@@ -989,7 +1029,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             
             // Heartbeat every 1 minute
             _ = heartbeat_interval.tick() => {
-                println!("Sending heartbeat to canister...");
+                // println!("Sending heartbeat to canister...");
                 // Refresh public IP on each heartbeat
                 let current_ip = get_public_ip().await?;
                 let current_multiaddr = format!("/ip4/{}/tcp/{}/p2p/{}", current_ip, local_node_initial_config.node.port, local_peer_id);
@@ -1015,7 +1055,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             
             // Try to connect to other nodes just before verification (5 seconds before)
             _ = pre_verification_connection_interval.tick() => {
-                println!("Pre-verification node connection check...");
+                // println!("Pre-verification node connection check...");
                 // Fetch the latest peers from the canister
                 match fetch_peer_nodes(&agent, &local_node_initial_config.node).await {
                     Ok(new_fetched_nodes) => {
@@ -1040,7 +1080,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         for addr in &new_active_nodes {
                             if let Ok(remote_addr) = addr.parse::<Multiaddr>() {
                                 if let Some(libp2p::multiaddr::Protocol::P2p(peer_id)) = remote_addr.iter().last() {
-                                    println!("Pre-verification: Attempting to dial: {} at {}", peer_id, remote_addr);
+                                    // println!("Pre-verification: Attempting to dial: {} at {}", peer_id, remote_addr);
                                     if let Err(e) = swarm.dial(remote_addr.clone()) {
                                         println!("Pre-verification: Failed to dial {}: {}", addr, e);
                                     } else {
@@ -1058,28 +1098,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
             
             // Message verification every 10 minutes
             _ = signing_request_interval.tick() => {
-                println!("Starting message verification cycle...");
+                // println!("Starting message verification cycle...");
                 // Check if we have enough nodes for verification
                 let should_verify = devices_yaml::should_start_verification(&agent, &canister_id, MIN_NODES_FOR_VERIFICATION).await;
                 if !should_verify {
                     println!("Skipping message verification due to insufficient node count.");
-                    // Wait for the next interval and try again
                     continue;
                 }
 
                 println!("Current peer count for verification: {}", swarm.connected_peers().count());
-                let log_file_inner_clone = log_file_clone.clone(); // Clone only if needed
+                let log_file_inner_clone = log_file_clone.clone();
 
                 let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
                 // Create non-encrypted data for this device only
-                let plain_data = PowerData::new_plain(device_id, &*config_devices.lock().unwrap());
+                let local_peer_id_str = local_peer_id.to_string();
+                let plain_data = PowerData::new_plain(&local_peer_id_str, &*config_devices.lock().unwrap())
+                    .map_err(|e| {
+                        eprintln!("Error creating power data: {}", e);
+                        e
+                    })?;
                 let json_string = serde_json::to_string_pretty(&plain_data).unwrap_or_else(|e| {
                     eprintln!("Error serializing data: {}", e);
                     String::new()
                 });
         
                 // Print the generated data
-                println!("\n--- {} Data Reading for Verification ---", device_id);
+                println!("\n--- {} Data Reading for Verification ---", local_peer_id_str);
                 println!("{}", json_string);
                 println!("-------------------\n");
                 
@@ -1091,12 +1135,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let message_hash_hex = hex::encode(message_hash_bytes);
 
                 let mut initial_signatures = HashSet::new();
-                let local_peer_id_str = local_peer_id.to_string();
-                initial_signatures.insert(local_peer_id_str.clone());
+                let local_peer_id_str_clone = local_peer_id_str.clone(); // Clone for use in SignedMessage
+                initial_signatures.insert(local_peer_id_str_clone.clone()); // Use cloned peer_id_str
 
                 let signed_message = SignedMessage {
                     content: message_content.to_string(),
-                    originator_id: local_peer_id_str.clone(),
+                    originator_id: local_peer_id_str_clone.clone(), // Use cloned peer_id_str
                     message_hash: message_hash_hex.clone(),
                     signatures: initial_signatures,
                     sensor_readings: plain_data.sensor_readings,
@@ -1105,9 +1149,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     timestamp: timestamp,
                 };
 
+                // Directly process and publish the message
                 let mut store = message_store_clone.lock().unwrap();
-                if !store.contains_key(&message_hash_hex) {
-                    store.insert(message_hash_hex.clone(), signed_message.clone());
+                if !store.contains_key(&signed_message.message_hash) {
+                    store.insert(signed_message.message_hash.clone(), signed_message.clone());
                     drop(store); // Release lock before async operations
 
                     match serde_json::to_string(&signed_message) {
@@ -1116,24 +1161,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 .behaviour_mut().gossipsub
                                 .publish(topic.clone(), json_message.as_bytes())
                             {
-                                eprintln!("Publish error for auto-sign request: {e:?}. Queuing for retry.");
+                                eprintln!("Publish error for new message: {e:?}. Queuing for retry.");
                                 failed_publish_queue_clone.lock().unwrap().push_back(signed_message);
                             } else {
-                                // println!("Auto-sign message published: Hash {}", message_hash_hex);
-                                // Log initial publication
                                 write_log(
-                                    &log_file_inner_clone, // Use the cloned log file handle
-                                    format!("MSG_PUBLISH_INIT Node={} Hash={} Content='{}'", local_peer_id_str, message_hash_hex, signed_message.content)
+                                    &log_file_inner_clone,
+                                    format!("MSG_PUBLISH_NEW Node={} Hash={} Content='{}'", 
+                                        local_peer_id_str, signed_message.message_hash, signed_message.content)
                                 ).await;
+                                println!("Published new signed message: Hash {}", signed_message.message_hash);
                             }
                         }
                         Err(e) => {
-                                eprintln!("Error serializing auto-sign message: {}. Queuing for retry.", e);
-                                failed_publish_queue_clone.lock().unwrap().push_back(signed_message);
+                            eprintln!("Error serializing new message: {}. Queuing for retry.", e);
+                            failed_publish_queue_clone.lock().unwrap().push_back(signed_message);
                         }
                     }
                 } else {
-                    drop(store); // Release lock if message already exists
+                    // Message with this hash already exists, perhaps from another node or a previous attempt.
+                    // Depending on desired logic, you might want to log this or handle it differently.
+                    // For now, we assume if it's in the store, it's being handled or was already published.
+                    println!("Message hash {} already in store, not republishing immediately from creation.", signed_message.message_hash);
                 }
             }
             
@@ -1200,11 +1248,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 println!("\n=== Network Metrics ===");
                 println!("Connection Success Rate: {:.2}%", 
                     (metrics.successful_connections as f64 / metrics.connection_attempts as f64) * 100.0);
-                println!("Average Connection Duration: {:?}", avg_connection_duration);
-                println!("Average Message Latency: {:?}", avg_message_latency);
                 println!("Last Heartbeat: {:?}", metrics.last_heartbeat_time);
-                println!("Current Mesh Peers: {}", mesh_peers);
-                println!("Average Mesh Peers: {}", avg_mesh_peers);
                 println!("=====================\n");
             }
             
@@ -1279,13 +1323,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             // Periodic devices.yaml sync
             _ = devices_sync_interval.tick() => {
-                println!("[SYNC_TASK] Starting devices.yaml sync operation. Current thread: {:?}", std::thread::current().id());
                 // Use the existing agent_for_sync, canister_id_for_sync, and config_devices_for_sync
                 match devices_yaml::fetch_and_save_devices_yaml(&agent_for_sync, &canister_id_for_sync).await {
                     Ok(_) => {
-                        println!("[SYNC_TASK] Periodic sync: devices.yaml fetched and saved successfully.");
                         
-                        println!("[SYNC_TASK] Attempting to reload devices.yaml into memory (blocking file I/O). Thread: {:?}", std::thread::current().id());
                         // Directly perform the reload logic. This part is blocking for file I/O.
                         match File::open("devices.yaml") { // std::fs::File, blocking
                             Ok(file) => {
@@ -1293,7 +1334,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     Ok(new_devices_config) => {
                                         let mut guard = config_devices_for_sync.lock().unwrap(); // Use the existing Arc<Mutex<Config>>
                                         *guard = new_devices_config;
-                                        println!("[SYNC_TASK] In-memory devices_config reloaded successfully.");
                                     }
                                     Err(e) => {
                                         eprintln!("[SYNC_TASK] Failed to parse updated devices.yaml for reloading: {}", e);
@@ -1309,7 +1349,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         eprintln!("[SYNC_TASK] Error during periodic sync (fetch_and_save_devices_yaml): {}", e);
                     }
                 }
-                println!("[SYNC_TASK] Finished devices.yaml sync operation.");
             }
         }
     }
@@ -1318,39 +1357,54 @@ async fn main() -> Result<(), Box<dyn Error>> {
 // Function to submit verified data to blockchain
 async fn submit_to_blockchain(
     verified_data: &VerifiedData, 
-    device_id: &str,
+    device_id: &str, // This is originator_id
     config_devices: &Arc<Mutex<Config>>
-) -> Result<(), Box<dyn Error>> {
+) -> Result<String, Box<dyn Error>> {
+    println!("[Blockchain] Attempting to submit data for device_id: {}", device_id);
+
+    // Get device configuration FIRST to minimize lock duration
+    println!("[Blockchain] Locking devices config to get device_type for device_id: {}", device_id);
+    let device_type_from_config: String;
+    let node_name_from_config: String; // For potential richer logging/data
+    {
+        let locked_devices_config = config_devices.lock().unwrap();
+        let device_config = locked_devices_config.get_device_by_peer_id(device_id)
+            .ok_or_else(|| {
+                let err_msg = format!("Device configuration not found for originator_id: {} in config_devices", device_id);
+                eprintln!("[Blockchain] Error: {}", err_msg);
+                io::Error::new(io::ErrorKind::NotFound, err_msg)
+            })?;
+        device_type_from_config = device_config.device_type.clone();
+        node_name_from_config = device_config.node_name.clone(); // Example: get node_name too
+        println!("[Blockchain] Successfully retrieved device_type: {} for node: {} (Peer ID: {})", 
+                 device_type_from_config, node_name_from_config, device_id);
+    } // lock is released here
+
     // Initialize blockchain client
+    println!("[Blockchain] Initializing BlockchainClient...");
     match BlockchainClient::new().await {
         Ok(client) => {
-            // Get device configuration to check device type
-            let locked_devices_config = config_devices.lock().unwrap();
-            let device_config = locked_devices_config.get_device_by_peer_id(device_id)
-                .expect("Device configuration not found for device_id");
+            println!("[Blockchain] BlockchainClient initialized successfully for device: {}", device_id);
 
             // Create a modified copy of power readings based on device type
             let mut modified_power_readings = verified_data.power_readings.clone();
             
-            // Adjust power readings based on device type
-            match device_config.device_type.as_str() {
+            println!("[Blockchain] Modifying power readings based on device_type: {} for device_id: {}", device_type_from_config, device_id);
+            match device_type_from_config.as_str() {
                 "Solar Generator" => {
-                    // For generators, we use power_produced_kwh
-                    // No modification needed as this is already the correct field
-                    println!("Submitting generated power data for Solar Generator");
+                    println!("[Blockchain] Submitting generated power data for Solar Generator (Peer ID: {})", device_id);
                 },
                 "Solar Consumer" => {
-                    // For consumers, we use power_consumed_kwh
-                    // Swap the values to use consumed power instead of produced
                     modified_power_readings.power_produced_kwh = modified_power_readings.power_consumed_kwh;
-                    println!("Submitting consumed power data for Solar Consumer");
+                    println!("[Blockchain] Submitting consumed power data for Solar Consumer (Peer ID: {})", device_id);
                 },
                 _ => {
-                    println!("Unknown device type: {}. Using default power readings.", device_config.device_type);
+                    println!("[Blockchain] Unknown device type: {}. Using default power readings for Peer ID: {}.", device_type_from_config, device_id);
                 }
             }
 
             // Submit the data to blockchain with modified power readings
+            println!("[Blockchain] Calling submit_energy_data_batch for device_id: {}", device_id);
             match client.submit_energy_data_batch(
                 device_id,
                 &modified_power_readings,
@@ -1358,44 +1412,49 @@ async fn submit_to_blockchain(
                 &verified_data.location
             ).await {
                 Ok(tx_hash) => {
-                    println!("Successfully submitted data to blockchain. Transaction hash: {}", tx_hash);
+                    println!("[Blockchain] Successfully submitted data to blockchain for device_id: {}. Transaction hash: {}", device_id, tx_hash);
                     
                     // Start a background task to monitor the batch and process it when ready
                     let batch_hash = tx_hash;
                     let blockchain_client = client;
+                    let owned_device_id = device_id.to_string(); // Create an owned String
                     
+                    println!("[Blockchain] Spawning task to monitor batch {} for device_id: {}", batch_hash, owned_device_id);
                     tokio::spawn(async move {
-                        println!("Started monitoring batch {} for verification period", batch_hash);
+                        println!("[BlockchainTask] Started monitoring batch {} for verification period (device_id: {})", batch_hash, owned_device_id);
                         // Wait for the batch processing delay (e.g., 10 minutes)
                         // This delay is configured in the smart contract
                         tokio::time::sleep(Duration::from_secs(10 * 60)).await;
+                        println!("[BlockchainTask] Finished waiting for batch {} (device_id: {}). Checking if processable.", batch_hash, owned_device_id);
                         
                         // Check if the batch is ready to be processed
                         match blockchain_client.is_batch_processable(batch_hash).await {
                             Ok(true) => {
-                                println!("Batch {} is ready for processing", batch_hash);
+                                println!("[BlockchainTask] Batch {} (device_id: {}) is ready for processing. Attempting to process.", batch_hash, owned_device_id);
                                 match blockchain_client.process_batch(batch_hash).await {
-                                    Ok(receipt) => println!("Batch processed successfully: tx={}", receipt.transaction_hash),
-                                    Err(e) => eprintln!("Failed to process batch: {}", e),
+                                    Ok(receipt) => println!("[BlockchainTask] Batch {} (device_id: {}) processed successfully: tx={}", batch_hash, owned_device_id, receipt.transaction_hash),
+                                    Err(e) => eprintln!("[BlockchainTask] Failed to process batch {} (device_id: {}): {}", batch_hash, owned_device_id, e),
                                 }
                             },
-                            Ok(false) => println!("Batch {} is not ready for processing yet", batch_hash),
-                            Err(e) => eprintln!("Error checking batch status: {}", e),
+                            Ok(false) => println!("[BlockchainTask] Batch {} (device_id: {}) is not ready for processing yet.", batch_hash, owned_device_id),
+                            Err(e) => eprintln!("[BlockchainTask] Error checking batch status for {} (device_id: {}): {}", batch_hash, owned_device_id, e),
                         }
                     });
                     
-                    Ok(())
+                    Ok(tx_hash.to_string()) // Return the transaction hash string
                 },
                 Err(e) => {
                     // Convert anyhow::Error to std::error::Error
-                    let err_string = format!("Blockchain error: {}", e);
+                    let err_string = format!("[Blockchain] Blockchain error for device_id: {}: {}", device_id, e);
+                    eprintln!("{}", err_string);
                     Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, err_string)))
                 }
             }
         },
         Err(e) => {
             // Convert anyhow::Error to std::error::Error
-            let err_string = format!("Blockchain client initialization error: {}", e);
+            let err_string = format!("[Blockchain] Blockchain client initialization error: {}", e);
+            eprintln!("{}", err_string);
             Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, err_string)))
         }
     }

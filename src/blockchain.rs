@@ -1,8 +1,7 @@
 use ethers::{
-    contract::Contract,
     providers::{Http, Provider},
     signers::{LocalWallet, Signer, Wallet},
-    types::{Bytes, TransactionReceipt, U256, H160, H256},
+    types::{TransactionReceipt, U256, H160, H256},
     middleware::{SignerMiddleware, Middleware},
     prelude::{abigen, k256},
 };
@@ -64,6 +63,7 @@ pub struct BlockchainClient {
     provider: Arc<Provider<Http>>,
     wallet: Wallet<k256::ecdsa::SigningKey>,
     energy_bridge: EnergyDataBridge<SignerMiddleware<Arc<Provider<Http>>, Wallet<k256::ecdsa::SigningKey>>>,
+    #[allow(dead_code)]
     chain_id: U256,
 }
 
@@ -164,6 +164,45 @@ impl BlockchainClient {
         Ok((data_hash_hex, consensus_hash_array))
     }
     
+    // Helper function to convert string to bytes32
+    fn string_to_bytes32(&self, input: &str) -> Result<[u8; 32]> {
+        // If the input is already 32 bytes or less, use the original logic
+        if input.len() <= 32 {
+            let mut result = [0u8; 32];
+            
+            // If input appears to be a hex string (with or without 0x prefix)
+            if input.starts_with("0x") {
+                let hex_str = &input[2..]; // Remove 0x prefix
+                let bytes = hex::decode(hex_str)?;
+                if bytes.len() > 32 {
+                    return Err(anyhow!("Input too long for bytes32"));
+                }
+                // Copy bytes to the end of the array to handle shorter inputs
+                let start_idx = 32 - bytes.len();
+                result[start_idx..].copy_from_slice(&bytes);
+            } else {
+                // If not hex, treat as UTF-8 string
+                let bytes = input.as_bytes();
+                // Copy bytes to the beginning of the array
+                result[..bytes.len()].copy_from_slice(bytes);
+            }
+            
+            Ok(result)
+        } else {
+            // If input is too long, hash it to get a fixed size
+            info!("Input '{}' too long for bytes32, using SHA-256 hash instead", input);
+            let mut hasher = Sha256::new();
+            hasher.update(input.as_bytes());
+            let hash = hasher.finalize();
+            
+            // Convert the hash to an array
+            let mut result = [0u8; 32];
+            result.copy_from_slice(hash.as_slice());
+            
+            Ok(result)
+        }
+    }
+
     // Submit a batch of energy data to the blockchain
     pub async fn submit_energy_data_batch(
         &self, 
@@ -172,48 +211,139 @@ impl BlockchainClient {
         _sensor_readings: &SensorReadings,
         _location: &Location
     ) -> Result<H256> {
-        info!("MOCK: Submitting energy data batch for device: {}", device_id);
+        info!("Submitting energy data batch for device: {}", device_id);
 
-        // This is a mock implementation
-        // In a real implementation, we would use the actual contract function
-        // Return a mock transaction hash for now
+        // Mock implementation - this will be replaced with actual implementation when ready
+        info!("Mock implementation for energy data batch submission until contract structure finalized");
         let mock_tx_hash = H256::from([1u8; 32]);
-        info!("MOCK: Energy data batch submitted. Transaction hash: {}", mock_tx_hash);
-        
         Ok(mock_tx_hash)
     }
     
     // Process a batch after verification period
     pub async fn process_batch(&self, batch_hash: H256) -> Result<TransactionReceipt> {
-        info!("MOCK: Processing batch: {}", batch_hash);
+        info!("Processing batch: {}", batch_hash);
         
-        // Create a mock transaction receipt
-        let tx_hash = H256::from([2u8; 32]);
+        // Convert H256 to [u8; 32] using into()
+        let batch_hash_bytes: [u8; 32] = batch_hash.into();
         
-        // Since TransactionReceipt is maintained by the ethers-rs library
-        // and may change between versions, we'll use a simpler approach
-        // to create a mock receipt
+        // Call the processBatch function
+        let contract_call = self.energy_bridge.process_batch(batch_hash_bytes);
+        let tx = contract_call.send().await?;
+        let receipt = tx.await?;
         
-        // For testing/mocking purposes, simply return a transaction hash instead
-        info!("MOCK: Batch processed. Transaction hash: {}", tx_hash);
-        
-        Err(anyhow!("Mocked implementation - in production this would return a TransactionReceipt"))
+        if let Some(receipt_value) = receipt {
+            info!("Batch processed. Transaction hash: {}", receipt_value.transaction_hash);
+            Ok(receipt_value)
+        } else {
+            Err(anyhow!("Failed to get transaction receipt"))
+        }
     }
     
     // Check if a batch is ready for processing
     pub async fn is_batch_processable(&self, batch_hash: H256) -> Result<bool> {
-        info!("MOCK: Checking if batch is processable: {}", batch_hash);
+        info!("Checking if batch is processable: {}", batch_hash);
         
-        // In a production environment, this would check the actual batch status
-        // For testing, simply return true
-        Ok(true)
+        // Convert H256 to [u8; 32] using into()
+        let batch_hash_bytes: [u8; 32] = batch_hash.into();
+        
+        // Get batch submission time
+        let submission_time = self.energy_bridge
+            .batch_submission_times(batch_hash_bytes)
+            .call()
+            .await?;
+        
+        // Get the processing delay
+        let delay = self.energy_bridge
+            .batch_processing_delay()
+            .call()
+            .await?;
+        
+        // Get current block time
+        let current_block = self.provider.get_block_number().await?;
+        let block = self.provider.get_block(current_block).await?;
+        let current_time = block
+            .ok_or_else(|| anyhow!("Failed to get block"))?
+            .timestamp
+            .as_u64();
+        
+        // Check if enough time has passed
+        let processable = submission_time.as_u64() + delay.as_u64() <= current_time;
+        
+        info!("Batch {} is {}", batch_hash, 
+              if processable { "ready for processing" } else { "not ready for processing yet" });
+        
+        Ok(processable)
     }
     
-    // Listen for events
-    pub async fn listen_for_events(&self) -> Result<()> {
-        // This would normally be implemented with WebSocket provider
-        // HTTP provider doesn't support subscriptions
-        info!("Event listening not supported with HTTP provider");
-        Ok(())
+    // Get wallet address as string (public method to access private field)
+    pub fn get_wallet_address(&self) -> String {
+        self.wallet.address().to_string()
+    }
+    
+    // Register a node with the smart contract
+    pub async fn register_node(&self, peer_id: &str) -> Result<H256> {
+        info!("Registering node with peer ID: {}", peer_id);
+        
+        // Convert peer_id string to bytes32
+        let peer_id_bytes = self.string_to_bytes32(peer_id)?;
+        
+        // For debugging purposes
+        let hex_peer_id = hex::encode(peer_id_bytes);
+        info!("Converted peer ID to bytes32: 0x{}", hex_peer_id);
+        
+        // Get the wallet address (the operator of the node)
+        let operator_address = self.wallet.address();
+        
+        // Call the registerNode function on the contract
+        let contract_call = self.energy_bridge.register_node(peer_id_bytes, operator_address);
+        let tx = contract_call.send().await?;
+        let receipt = tx.await?;
+        
+        // Get the transaction hash
+        if let Some(receipt_value) = receipt {
+            let tx_hash = receipt_value.transaction_hash;
+            info!("Node registered successfully. Transaction hash: {}", tx_hash);
+            Ok(tx_hash)
+        } else {
+            Err(anyhow!("Failed to get transaction receipt for node registration"))
+        }
+    }
+    
+    // Grant a role to an address
+    pub async fn grant_role(&self, role_name: &str, account: &str) -> Result<H256> {
+        info!("Granting role {} to account {}", role_name, account);
+        
+        // Convert role name to bytes32 role identifier
+        let role = match role_name {
+            "DATA_SUBMITTER_ROLE" => self.energy_bridge.data_submitter_role().call().await?,
+            "NODE_MANAGER_ROLE" => self.energy_bridge.node_manager_role().call().await?,
+            "PAUSER_ROLE" => self.energy_bridge.pauser_role().call().await?,
+            "UPGRADER_ROLE" => self.energy_bridge.upgrader_role().call().await?,
+            "DEFAULT_ADMIN_ROLE" => self.energy_bridge.default_admin_role().call().await?,
+            _ => return Err(anyhow!("Unknown role: {}", role_name)),
+        };
+        
+        // Parse account address
+        let account_address = account.parse::<H160>()?;
+        
+        // Call the grantRole function - fix temporary value issue
+        let contract_call = self.energy_bridge.grant_role(role, account_address);
+        let tx = contract_call.send().await?;
+        let receipt = tx.await?;
+        
+        // Get the transaction hash
+        if let Some(receipt_value) = receipt {
+            let tx_hash = receipt_value.transaction_hash;
+            info!("Role {} granted to account {} successfully. Transaction hash: {}", 
+                  role_name, account, tx_hash);
+            Ok(tx_hash)
+        } else {
+            Err(anyhow!("Failed to get transaction receipt for role granting"))
+        }
+    }
+    
+    // Grant the DATA_SUBMITTER_ROLE to a node operator
+    pub async fn grant_submitter_role(&self, account: &str) -> Result<H256> {
+        self.grant_role("DATA_SUBMITTER_ROLE", account).await
     }
 } 
