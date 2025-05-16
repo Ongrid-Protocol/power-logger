@@ -232,7 +232,7 @@ async fn get_public_ip() -> Result<String, Box<dyn Error>> {
     let local_addr = socket.local_addr()?;
     let ip = local_addr.ip().to_string();
     
-    println!("Detected public IP: {}", ip);
+    // println!("Detected public IP: {}", ip);
     Ok(ip)
 }
 
@@ -265,7 +265,7 @@ fn test_connectivity(target_ip: &str) -> bool {
     match output {
         Ok(output) => {
             let success = output.status.success();
-            println!("Ping test to {}: {}", target_ip, if success { "SUCCESS" } else { "FAILED" });
+            // println!("Ping test to {}: {}", target_ip, if success { "SUCCESS" } else { "FAILED" });
             success
         }
         Err(e) => {
@@ -290,7 +290,6 @@ impl PowerData {
         let location = current_devices_config.get_device_location(peer_id)
             .map(|loc| loc.clone())
             .unwrap_or_else(|| {
-                println!("Warning: Using default location for device {}", peer_id);
                 Location {
                     latitude: 37.7749,
                     longitude: -122.4194,
@@ -475,10 +474,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         println!("Current Node Peer ID: {}", peer_id_str);
                         println!("Retrieved Operator Wallet Address (from devices.yaml): {}", operator_wallet_address);
                         println!("----------------------------------------------\n");
-
-                        println!("The next step is to register this node (Peer ID: {}) with the blockchain.", peer_id_str);
-                        println!("This typically uses the operator wallet address ({}) associated with it in the devices.yaml file provided by the canister.", operator_wallet_address);
-                        println!("Do you want to proceed with registering this node on the blockchain? (yes/no):");
+                        match power_logger::blockchain::get_raw_ed25519_pubkey_from_peer_id_str(&peer_id_str) {
+                            Ok(peer_id_bytes_for_contract) => {
+                                // Get operator wallet address from the devices config
+                                let operator_wallet_address = {
+                                    let locked_devices_config = config_devices.lock().unwrap();
+                                    locked_devices_config.get_device_by_peer_id(&peer_id_str)
+                                        .map(|device| device.wallet_address.clone())
+                                        .unwrap_or_else(|| "WALLET_ADDRESS_NOT_FOUND".to_string())
+                                };
+                                
+                                println!("[Blockchain] Original Peer ID string for registration: {}", peer_id_str);
+                                println!("[Blockchain] Converted Peer ID to raw Ed25519 pubkey (bytes32) for contract: 0x{}", hex::encode(peer_id_bytes_for_contract));
+                                println!("The next step is to register this node (Peer ID: {}) with the blockchain.", hex::encode(peer_id_bytes_for_contract));
+                                println!("This typically uses the operator wallet address ({}) associated with it in the devices.yaml file provided by the canister.", operator_wallet_address);
+                                io::stdout().flush().unwrap(); // Force flush stdout
+                            }
+                            Err(e) => {
+                                    println!("Error converting Peer ID string '{}' to raw Ed25519 pubkey bytes: {}. Blockchain registration cannot proceed.", peer_id_str, e);
+                                    io::stdout().flush().unwrap(); // Force flush stdout
+                            }
+                        }
                         
                         let mut proceed_with_blockchain_reg_input = String::new();
                         std::io::stdin().read_line(&mut proceed_with_blockchain_reg_input)?;
@@ -487,45 +503,58 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             match BlockchainClient::new().await {
                                 Ok(blockchain_client) => {
                                     println!("Attempting to register node {} on the blockchain...", peer_id_str);
-                                    match blockchain_client.register_node(&peer_id_str).await {
-                                        Ok(tx_hash) => {
-                                            println!("Blockchain node registration transaction submitted successfully.");
-                                            println!("Transaction Hash: {}", tx_hash);
-                                            
-                                            let mut blockchain_confirmed_by_user = false;
-                                            while !blockchain_confirmed_by_user {
-                                                println!("\nPlease monitor the transaction (Hash: {}) on a blockchain explorer.", tx_hash);
-                                                println!("Has the node registration (Peer ID: {}) been confirmed on the blockchain? (yes/no/skip):", peer_id_str);
-                                                let mut confirmation_input = String::new();
-                                                std::io::stdin().read_line(&mut confirmation_input)?;
-                                                match confirmation_input.trim().to_lowercase().as_str() {
-                                                    "yes" => {
-                                                        println!("Blockchain registration confirmed by user for Peer ID {}.", peer_id_str);
-                                                        blockchain_confirmed_by_user = true;
-                                                        registration_success = true; // Overall new node setup process successful
+
+                                    // Convert Peer ID string to raw Ed25519 public key bytes for the contract
+                                    match power_logger::blockchain::get_raw_ed25519_pubkey_from_peer_id_str(&peer_id_str) {
+                                        Ok(peer_id_bytes_for_contract) => {
+                                            println!("[Blockchain] Original Peer ID string for registration: {}", peer_id_str);
+                                            println!("[Blockchain] Converted Peer ID to raw Ed25519 pubkey (bytes32) for contract: 0x{}", hex::encode(peer_id_bytes_for_contract));
+
+                                            match blockchain_client.register_node(&peer_id_str, peer_id_bytes_for_contract).await {
+                                                Ok(tx_hash) => {
+                                                    println!("Blockchain node registration transaction submitted successfully.");
+                                                    println!("Transaction Hash: {}", tx_hash);
+                                                    
+                                                    let mut blockchain_confirmed_by_user = false;
+                                                    while !blockchain_confirmed_by_user {
+                                                        println!("\nPlease monitor the transaction (Hash: {}) on a blockchain explorer.", tx_hash);
+                                                        println!("Has the node registration (Peer ID: {}) been confirmed on the blockchain? (yes/no/skip):", peer_id_str);
+                                                        let mut confirmation_input = String::new();
+                                                        std::io::stdin().read_line(&mut confirmation_input)?;
+                                                        match confirmation_input.trim().to_lowercase().as_str() {
+                                                            "yes" => {
+                                                                println!("Blockchain registration confirmed by user for Peer ID {}.", peer_id_str);
+                                                                blockchain_confirmed_by_user = true;
+                                                                registration_success = true; // Overall new node setup process successful
+                                                            }
+                                                            "no" => {
+                                                                println!("Please continue to monitor the transaction. Confirm once it's processed on the blockchain.");
+                                                            }
+                                                            "skip" => {
+                                                                println!("Skipping blockchain registration confirmation by user request for Peer ID {}.", peer_id_str);
+                                                                println!("Node setup will proceed. Ensure the node is registered on the blockchain manually if issues arise with blockchain-related features.");
+                                                                blockchain_confirmed_by_user = true;
+                                                                registration_success = true; // Overall new node setup successful (with skipped confirmation)
+                                                            }
+                                                            _ => {
+                                                                println!("Invalid input. Please enter 'yes', 'no', or 'skip'.");
+                                                            }
+                                                        }
                                                     }
-                                                    "no" => {
-                                                        println!("Please continue to monitor the transaction. Confirm once it's processed on the blockchain.");
-                                                    }
-                                                    "skip" => {
-                                                        println!("Skipping blockchain registration confirmation by user request for Peer ID {}.", peer_id_str);
-                                                        println!("Node setup will proceed. Ensure the node is registered on the blockchain manually if issues arise with blockchain-related features.");
-                                                        blockchain_confirmed_by_user = true;
-                                                        registration_success = true; // Overall new node setup successful (with skipped confirmation)
-                                                    }
-                                                    _ => {
-                                                        println!("Invalid input. Please enter 'yes', 'no', or 'skip'.");
-                                                    }
+                                                },
+                                                Err(e) => {
+                                                    println!("Error during blockchain node registration for Peer ID {}: {}", peer_id_str, e);
+                                                    println!("Node registration on the blockchain failed. You may need to retry or register manually via other means.");
+                                                    // registration_success remains false, OTP loop will continue or user can exit.
                                                 }
                                             }
                                         },
                                         Err(e) => {
-                                            println!("Error during blockchain node registration for Peer ID {}: {}", peer_id_str, e);
-                                            println!("Node registration on the blockchain failed. You may need to retry or register manually via other means.");
+                                            println!("Error converting Peer ID string '{}' to raw Ed25519 pubkey bytes: {}. Blockchain registration cannot proceed.", peer_id_str, e);
+                                            io::stdout().flush().unwrap(); // Force flush stdout
                                             // registration_success remains false, OTP loop will continue or user can exit.
                                         }
                                     }
-                                    // Granting submitter role is removed as per user request.
                                 },
                                 Err(e) => {
                                     println!("Failed to initialize Blockchain client: {}", e);
@@ -553,6 +582,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
     } else { // Node already has a private key, existing node flow
         println!("Node already registered, skipping OTP registration flow.");
         // Existing node - try to register with canister (heartbeat/re-affirm) without OTP
+        match power_logger::blockchain::get_raw_ed25519_pubkey_from_peer_id_str(&peer_id_str) {
+            Ok(peer_id_bytes_for_contract) => {
+                // Get operator wallet address from the devices config
+                let operator_wallet_address = {
+                    let locked_devices_config = config_devices.lock().unwrap();
+                    locked_devices_config.get_device_by_peer_id(&peer_id_str)
+                        .map(|device| device.wallet_address.clone())
+                        .unwrap_or_else(|| "WALLET_ADDRESS_NOT_FOUND".to_string())
+                };
+                
+                println!("[Blockchain] Original Peer ID string for registration: {}", peer_id_str);
+                println!("[Blockchain] Converted Peer ID to raw Ed25519 pubkey (bytes32) for contract: 0x{}", hex::encode(peer_id_bytes_for_contract));
+                println!("The next step is to register this node (Peer ID: {}) with the blockchain.", hex::encode(peer_id_bytes_for_contract));
+                println!("This typically uses the operator wallet address ({}) associated with it in the devices.yaml file provided by the canister.", operator_wallet_address);
+                io::stdout().flush().unwrap(); // Force flush stdout
+            }
+            Err(e) => {
+                    println!("Error converting Peer ID string '{}' to raw Ed25519 pubkey bytes: {}. Blockchain registration cannot proceed.", peer_id_str, e);
+                    io::stdout().flush().unwrap(); // Force flush stdout
+            }
+        }
+        
         match register_node(
             &agent,
             &canister_id,
@@ -564,7 +615,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Ok(response) => {
                 if response.success {
                     println!("Successfully registered node with canister");
-                    println!("Assigned Principal ID: {}", response.node_principal);
                     if let Err(e) = save_principal_id(&response.node_principal) {
                         println!("Failed to save principal ID: {}", e);
                     }
@@ -694,7 +744,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 println!("Attempting to dial: {} at {}", peer_id, remote_addr);
                 match swarm.dial(remote_addr.clone()) {
                     Ok(_) => {
-                        println!("Dial initiated to node: {}", addr);
+                        // println!("Dial initiated to node: {}", addr);
                     }
                     Err(e) => {
                         println!("Failed to dial {}: {} - Error type: {:?}", addr, e, e);
@@ -1122,10 +1172,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     String::new()
                 });
         
-                // Print the generated data
-                println!("\n--- {} Data Reading for Verification ---", local_peer_id_str);
-                println!("{}", json_string);
-                println!("-------------------\n");
+                // // Print the generated data
+                // println!("\n--- {} Data Reading for Verification ---", local_peer_id_str);
+                // println!("{}", json_string);
+                // println!("-------------------\n");
                 
                 let message_content = json_string;
 
@@ -1289,7 +1339,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         
                         match swarm.dial(peer.multiaddr.clone()) {
                             Ok(_) => {
-                                println!("Retry dial initiated for peer: {}", peer.peer_id);
+                                // println!("Retry dial initiated for peer: {}", peer.peer_id);
                                 // Update retry count and last attempt time
                                 peer.retry_count += 1;
                                 peer.last_attempt = now;
@@ -1303,7 +1353,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 }
                             }
                             Err(e) => {
-                                println!("Retry dial failed for peer {}: {}", peer.peer_id, e);
+                                // println!("Retry dial failed for peer {}: {}", peer.peer_id, e);
                                 // Update the retry count and last attempt anyway
                                 peer.retry_count += 1;
                                 peer.last_attempt = now;
@@ -1374,6 +1424,7 @@ async fn submit_to_blockchain(
                 eprintln!("[Blockchain] Error: {}", err_msg);
                 io::Error::new(io::ErrorKind::NotFound, err_msg)
             })?;
+        println!("[Blockchain] Device config: {:?}", device_config);
         device_type_from_config = device_config.device_type.clone();
         node_name_from_config = device_config.node_name.clone(); // Example: get node_name too
         println!("[Blockchain] Successfully retrieved device_type: {} for node: {} (Peer ID: {})", 

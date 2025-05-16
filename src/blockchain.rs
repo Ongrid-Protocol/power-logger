@@ -5,7 +5,7 @@ use ethers::{
     middleware::{SignerMiddleware, Middleware},
     prelude::{abigen, k256},
 };
-use std::{sync::Arc, convert::TryFrom};
+use std::{sync::Arc, convert::TryFrom, error::Error};
 use serde::{Serialize, Deserialize};
 use anyhow::{Result, anyhow};
 use log::{debug, info};
@@ -16,6 +16,8 @@ use crate::sensors::SensorReadings;
 use crate::gps::Location;
 use sha2::{Sha256, Digest};
 use hex;
+use libp2p::identity::{PublicKey, ed25519};
+use std::str::FromStr;
 
 // Generate types from EnergyDataBridge ABI
 abigen!(
@@ -164,44 +166,6 @@ impl BlockchainClient {
         Ok((data_hash_hex, consensus_hash_array))
     }
     
-    // Helper function to convert string to bytes32
-    fn string_to_bytes32(&self, input: &str) -> Result<[u8; 32]> {
-        // If the input is already 32 bytes or less, use the original logic
-        if input.len() <= 32 {
-            let mut result = [0u8; 32];
-            
-            // If input appears to be a hex string (with or without 0x prefix)
-            if input.starts_with("0x") {
-                let hex_str = &input[2..]; // Remove 0x prefix
-                let bytes = hex::decode(hex_str)?;
-                if bytes.len() > 32 {
-                    return Err(anyhow!("Input too long for bytes32"));
-                }
-                // Copy bytes to the end of the array to handle shorter inputs
-                let start_idx = 32 - bytes.len();
-                result[start_idx..].copy_from_slice(&bytes);
-            } else {
-                // If not hex, treat as UTF-8 string
-                let bytes = input.as_bytes();
-                // Copy bytes to the beginning of the array
-                result[..bytes.len()].copy_from_slice(bytes);
-            }
-            
-            Ok(result)
-        } else {
-            // If input is too long, hash it to get a fixed size
-            info!("Input '{}' too long for bytes32, using SHA-256 hash instead", input);
-            let mut hasher = Sha256::new();
-            hasher.update(input.as_bytes());
-            let hash = hasher.finalize();
-            
-            // Convert the hash to an array
-            let mut result = [0u8; 32];
-            result.copy_from_slice(hash.as_slice());
-            
-            Ok(result)
-        }
-    }
 
     // Submit a batch of energy data to the blockchain
     pub async fn submit_energy_data_batch(
@@ -281,15 +245,9 @@ impl BlockchainClient {
     }
     
     // Register a node with the smart contract
-    pub async fn register_node(&self, peer_id: &str) -> Result<H256> {
-        info!("Registering node with peer ID: {}", peer_id);
-        
-        // Convert peer_id string to bytes32
-        let peer_id_bytes = self.string_to_bytes32(peer_id)?;
-        
-        // For debugging purposes
-        let hex_peer_id = hex::encode(peer_id_bytes);
-        info!("Converted peer ID to bytes32: 0x{}", hex_peer_id);
+    pub async fn register_node(&self, peer_id_str_for_log: &str, peer_id_bytes: [u8; 32]) -> Result<H256> {
+        info!("Registering node (original PeerID: {}) with Peer ID as bytes32: 0x{}", 
+              peer_id_str_for_log, hex::encode(peer_id_bytes));
         
         // Get the wallet address (the operator of the node)
         let operator_address = self.wallet.address();
@@ -345,5 +303,38 @@ impl BlockchainClient {
     // Grant the DATA_SUBMITTER_ROLE to a node operator
     pub async fn grant_submitter_role(&self, account: &str) -> Result<H256> {
         self.grant_role("DATA_SUBMITTER_ROLE", account).await
+    }
+}
+
+// New function to convert Peer ID string to raw Ed25519 public key bytes
+pub fn get_raw_ed25519_pubkey_from_peer_id_str(peer_id_str: &str) -> Result<[u8; 32], Box<dyn Error + Send + Sync>> {
+    use libp2p::identity::PeerId;
+    use std::str::FromStr;
+
+    // Parse the PeerId from the string
+    let peer_id = PeerId::from_str(peer_id_str)
+        .map_err(|e| format!("Failed to parse Peer ID string '{}': {}", peer_id_str, e))?;
+    
+    // Get the bytes representation of the PeerId (which is a multihash)
+    let multihash_bytes = peer_id.to_bytes();
+    
+    // For Ed25519 keys with identity hash, we expect a specific pattern:
+    // - The first few bytes are the multihash header (usually 0x00 for identity hash, plus length)
+    // - The remaining bytes should contain a protobuf-encoded PublicKey
+    // - For Ed25519, this should be a 32-byte key
+
+    // Check if the multihash is an identity hash (code 0)
+    // A basic check would be to look for a pattern indicating an Ed25519 key
+    if multihash_bytes.len() >= 35 {  // Minimum reasonable length
+        // Skip the multihash header and try to extract the key
+        // For Ed25519 keys, we typically expect the last 32 bytes to be the actual key
+        let key_bytes = &multihash_bytes[multihash_bytes.len() - 32..];
+        
+        let mut result = [0u8; 32];
+        result.copy_from_slice(key_bytes);
+        
+        Ok(result)
+    } else {
+        Err(format!("Peer ID '{}' does not appear to be an identity-hashed Ed25519 key", peer_id_str).into())
     }
 } 
